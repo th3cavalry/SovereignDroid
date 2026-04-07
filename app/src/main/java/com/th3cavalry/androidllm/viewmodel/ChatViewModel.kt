@@ -159,8 +159,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     private suspend fun runOnDeviceLoop(userText: String, backend: InferenceBackend) {
         // Determine the model-path preference key for this backend type
         val modelPathKey = when (backend) {
-            is LiteRtLmBackend -> Prefs.KEY_LITERT_LM_MODEL_PATH
-            else               -> Prefs.KEY_ON_DEVICE_MODEL_PATH // MediaPipe
+            is LiteRtLmBackend         -> Prefs.KEY_LITERT_LM_MODEL_PATH
+            is OnDeviceInferenceService -> Prefs.KEY_ON_DEVICE_MODEL_PATH
+            else -> error("Unhandled backend type: ${backend::class.simpleName}")
         }
 
         // Ensure the model is loaded

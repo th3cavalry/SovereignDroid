@@ -22,10 +22,12 @@ import kotlinx.coroutines.withContext
  * surface is stable for basic inference but may evolve in future releases.
  *
  * Lifecycle: call [initialize] before [generate]; call [close] when done.
+ *
+ * @param context Android context. Currently unused by [EngineConfig] but retained
+ *   for forward compatibility — the Android-specific LiteRT-LM runtime is expected
+ *   to require a context for GPU/NPU device initialisation in a future release.
  */
-class LiteRtLmBackend(
-    @Suppress("UNUSED_PARAMETER") context: Context
-) : InferenceBackend {
+class LiteRtLmBackend(private val context: Context) : InferenceBackend {
 
     override val displayName = "LiteRT-LM (.litertlm files)"
     override val modelFileHint =

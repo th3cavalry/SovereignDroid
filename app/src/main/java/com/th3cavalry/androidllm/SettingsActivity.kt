@@ -137,11 +137,10 @@ class SettingsActivity : AppCompatActivity() {
                 else               -> Prefs.BACKEND_REMOTE
             }
             updateBackendSections(backend)
-            // Pre-fill the endpoint field so the user sees the correct value immediately
+            // Pre-fill the endpoint field with the Ollama default if the field is blank
+            // or still contains a different value. Only auto-fill when switching to Ollama.
             if (backend == Prefs.BACKEND_OLLAMA_LOCAL &&
-                binding.etLlmEndpoint.text.toString().trim().let {
-                    it.isBlank() || !it.contains("localhost")
-                }
+                binding.etLlmEndpoint.text.toString().trim() != "http://localhost:11434/v1"
             ) {
                 binding.etLlmEndpoint.setText("http://localhost:11434/v1")
             }
