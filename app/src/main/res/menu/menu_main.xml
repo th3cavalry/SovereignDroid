@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_terminal"
+        android:title="@string/action_terminal"
+        android:icon="@drawable/ic_terminal"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_mcp"
+        android:title="@string/action_mcp"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_clear"
+        android:title="@string/action_clear_chat"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_settings"
+        android:title="@string/action_settings"
+        android:icon="@drawable/ic_settings"
+        app:showAsAction="ifRoom" />
+
+</menu>
