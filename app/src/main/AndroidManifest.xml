@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Network permissions for LLM API, web search, GitHub, MCP servers -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Override minSdk constraint from com.google.ai.edge.aicore (requires API 31).
+         Gemini Nano will only work on Pixel 9+ / Android 15+ at runtime; devices below
+         API 31 will receive a graceful error from GeminiNanoBackend.initialize(). -->
+    <uses-sdk tools:overrideLibrary="com.google.ai.edge.aicore" />
+
+    <application
+        android:name=".App"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.AndroidLLM"
+        android:usesCleartextTraffic="true">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false"
+            android:label="@string/settings" />
+
+        <activity
+            android:name=".TerminalActivity"
+            android:exported="false"
+            android:label="@string/terminal"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".MCPManagerActivity"
+            android:exported="false"
+            android:label="@string/mcp_servers" />
+
+        <activity
+            android:name=".ModelBrowserActivity"
+            android:exported="false"
+            android:label="@string/browse_model_catalog" />
+
+    </application>
+
+</manifest>

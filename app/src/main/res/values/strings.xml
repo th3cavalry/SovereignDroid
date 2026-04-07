@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Android LLM</string>
+    <string name="settings">Settings</string>
+    <string name="terminal">SSH Terminal</string>
+    <string name="mcp_servers">MCP Servers</string>
+    <string name="message_hint">Message…</string>
+    <string name="send">Send</string>
+    <string name="run">Run</string>
+    <string name="clear">Clear</string>
+    <string name="connect">Connect</string>
+
+    <!-- Inference backend selector -->
+    <string name="section_inference_backend">Inference Backend</string>
+    <string name="backend_remote">Remote API (OpenAI-compatible endpoint)</string>
+    <string name="backend_mediapipe">MediaPipe — .task files (Gemma, Phi, Falcon)</string>
+    <string name="backend_litert_lm">LiteRT-LM — .litertlm files (Gemma 4, Phi-4, Llama, Qwen) ★ Google\'s new SDK</string>
+    <string name="backend_ollama_local">Ollama on-device (via Termux at localhost:11434)</string>
+
+    <!-- MediaPipe backend settings -->
+    <string name="mediapipe_model_path">Model file path (.task format)</string>
+    <string name="mediapipe_model_hint">Supported: Gemma 2B-IT INT4 (~1.4 GB), Phi-2 (~1.6 GB), Falcon 1B (~1 GB).\nDownload .task files from kaggle.com/models/google/gemma</string>
+
+    <!-- LiteRT-LM backend settings -->
+    <string name="litert_lm_model_path">Model file path (.litertlm format)</string>
+    <string name="litert_lm_model_hint">Supported: Gemma 4 (1B, 4B), Phi-4 Mini, Llama 3.2, Qwen 2.5 and more.\nDownload .litertlm files from huggingface.co/litert-community</string>
+
+    <!-- Ollama on-device info -->
+    <string name="ollama_local_hint">Install Ollama in Termux:\n1. Install Termux from F-Droid\n2. Run: pkg install ollama\n3. Run: ollama serve\n4. Pull a model: ollama pull gemma3:1b\n\nThe API endpoint will be set to http://localhost:11434/v1 automatically.</string>
+
+    <!-- Gemini Nano backend -->
+    <string name="backend_gemini_nano">Gemini Nano — via AI Edge SDK (Pixel 9+ / Android 15+)</string>
+    <string name="gemini_nano_hint">Uses Google\'s system Gemini Nano model via the AI Edge SDK.\n\nNo model file to download — the model is built into the OS on supported devices.\n\nRequirements: Pixel 9 or newer, Android 15 (API 35)+.\n\nNote: The AI Edge SDK is experimental (v0.0.1-exp02) and subject to change.</string>
+
+    <!-- Model Browser -->
+    <string name="browse_model_catalog">Browse Models (Hugging Face)</string>
+    <string name="browse_models_mediapipe">Browse MediaPipe Models</string>
+    <string name="browse_models_litert">Browse LiteRT-LM Models</string>
+    <string name="search_models_hint">Search models…</string>
+    <string name="select_model">Select</string>
+    <string name="download">Download</string>
+    <string name="no_models_found">No models found. Check your internet connection.</string>
+    <string name="no_files_for_backend">No compatible files for this backend.</string>
+    <string name="loading_model_files">Loading file list…</string>
+    <string name="sheet_select_file_hint">Tap a file to download it to your device.</string>
+    <string name="download_model_title">Download model?</string>
+    <string name="download_model_message">Download %1$s (%2$s)?\n\nThe file will be saved to your Downloads folder.</string>
+    <string name="download_started">Downloading %1$s…</string>
+    <string name="download_complete_title">Download complete</string>
+    <string name="download_complete_message">%1$s has been downloaded to your Downloads folder.</string>
+    <string name="set_as_model">Set as model</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="model_path_updated">Model path updated. Tap Save to apply.</string>
+
+    <!-- Hugging Face token -->
+    <string name="section_hf">Hugging Face (Model Browser)</string>
+    <string name="hf_token">HF Access Token (optional)</string>
+    <string name="hf_token_hint">Required for downloading gated models (e.g. Gemma). Get a token at huggingface.co/settings/tokens</string>
+
+    <string name="browse_model">Browse…</string>
+    <string name="model_copying">Copying model to internal storage…</string>
+    <string name="model_ready">Model ready</string>
+    <string name="model_copy_failed">Failed to copy model</string>
+
+    <!-- Settings labels -->
+    <string name="section_llm">Remote API (OpenAI-compatible)</string>
+    <string name="llm_endpoint">API Endpoint (e.g. http://localhost:11434/v1)</string>
+    <string name="llm_api_key">API Key (leave blank for Ollama)</string>
+    <string name="llm_model">Model name</string>
+    <string name="max_tokens">Max tokens</string>
+
+    <string name="section_search">Web Search</string>
+    <string name="search_api_key">API Key (for Brave or SerpAPI)</string>
+
+    <string name="section_github">GitHub</string>
+    <string name="github_token">Personal Access Token</string>
+
+    <string name="section_ssh">SSH Defaults</string>
+    <string name="ssh_default_host">Default host</string>
+    <string name="ssh_default_user">Default username</string>
+    <string name="ssh_private_key">PEM Private Key (optional)</string>
+
+    <!-- Terminal -->
+    <string name="ssh_connection">SSH Connection</string>
+    <string name="host">Host / IP</string>
+    <string name="port">Port</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+    <string name="command_hint">Enter command…</string>
+
+    <!-- MCP Manager -->
+    <string name="no_mcp_servers">No MCP servers configured.\nTap + to add one.</string>
+    <string name="add_mcp_server">Add MCP Server</string>
+    <string name="server_name">Server name</string>
+    <string name="server_url">Server URL (e.g. http://192.168.1.1:3000/mcp)</string>
+    <string name="description_optional">Description (optional)</string>
+    <string name="add">Add</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="test_connection">Test Connection</string>
+
+    <!-- Menu -->
+    <string name="action_settings">Settings</string>
+    <string name="action_terminal">Terminal</string>
+    <string name="action_mcp">MCP Servers</string>
+    <string name="action_clear_chat">Clear chat</string>
+
+    <!-- Search providers -->
+    <string-array name="search_providers">
+        <item>DuckDuckGo (free, no key needed)</item>
+        <item>Brave Search (API key required)</item>
+        <item>SerpAPI (API key required)</item>
+    </string-array>
+</resources>

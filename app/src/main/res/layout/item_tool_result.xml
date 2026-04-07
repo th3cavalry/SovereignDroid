@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="8dp"
+    android:paddingStart="16dp">
+
+    <TextView
+        android:id="@+id/tvToolName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="12sp"
+        android:textColor="@color/tool_success"
+        android:layout_marginBottom="2dp"
+        android:fontFamily="monospace" />
+
+    <TextView
+        android:id="@+id/tvResult"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxWidth="320dp"
+        android:background="@drawable/bg_tool_result"
+        android:padding="10dp"
+        android:textColor="#444444"
+        android:textSize="12sp"
+        android:fontFamily="monospace"
+        android:lineSpacingMultiplier="1.3" />
+
+</LinearLayout>

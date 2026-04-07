@@ -1,0 +1,32 @@
+# Gradle build outputs
+.gradle/
+build/
+app/build/
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+*.iws
+*.ipr
+.DS_Store
+
+# Local configuration
+local.properties
+
+# Compiled output
+*.class
+*.jar
+*.aar
+*.apk
+*.aab
+
+# OS files
+Thumbs.db
+ehthumbs.db
+
+# Keystore files (never commit these)
+*.keystore
+*.jks
+
+# Kotlin compiler artefacts
+.kotlin/
