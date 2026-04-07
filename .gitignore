@@ -16,6 +16,7 @@ local.properties
 # Compiled output
 *.class
 *.jar
+!gradle/wrapper/gradle-wrapper.jar
 *.aar
 *.apk
 *.aab
