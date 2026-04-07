@@ -1,13 +1,32 @@
 package com.th3cavalry.androidllm
 
+import android.app.Activity
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.view.View
 import android.widget.SeekBar
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import com.google.android.material.snackbar.Snackbar
 import com.th3cavalry.androidllm.databinding.ActivitySettingsBinding
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
 
 class SettingsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySettingsBinding
+
+    /** File picker that copies the chosen .task model file to internal storage. */
+    private val pickModelLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri != null) copyModelFile(uri)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -18,9 +37,18 @@ class SettingsActivity : AppCompatActivity() {
 
         loadPrefs()
         setupTemperatureSlider()
+        setupOnDeviceToggle()
+        setupBrowseButton()
     }
 
     private fun loadPrefs() {
+        // On-device
+        val onDevice = Prefs.getBoolean(this, Prefs.KEY_ON_DEVICE_ENABLED)
+        binding.switchOnDevice.isChecked = onDevice
+        binding.layoutOnDeviceModel.visibility = if (onDevice) View.VISIBLE else View.GONE
+        binding.etModelPath.setText(Prefs.getString(this, Prefs.KEY_ON_DEVICE_MODEL_PATH))
+
+        // Remote API
         binding.etLlmEndpoint.setText(
             Prefs.getString(this, Prefs.KEY_LLM_ENDPOINT, Prefs.DEFAULT_ENDPOINT)
         )
@@ -54,6 +82,62 @@ class SettingsActivity : AppCompatActivity() {
         binding.etSshPrivateKey.setText(Prefs.getString(this, Prefs.KEY_SSH_DEFAULT_KEY))
     }
 
+    private fun setupOnDeviceToggle() {
+        binding.switchOnDevice.setOnCheckedChangeListener { _, checked ->
+            binding.layoutOnDeviceModel.visibility = if (checked) View.VISIBLE else View.GONE
+        }
+    }
+
+    private fun setupBrowseButton() {
+        binding.btnBrowseModel.setOnClickListener {
+            // Open the system file picker for any file type (model files have no standard MIME)
+            pickModelLauncher.launch(arrayOf("*/*"))
+        }
+    }
+
+    /**
+     * Copies the model file chosen by the user to internal storage so MediaPipe
+     * can access it by file path (content:// URIs are not supported by MediaPipe directly).
+     * Shows progress via Snackbar.
+     */
+    private fun copyModelFile(uri: Uri) {
+        val snack = Snackbar.make(binding.root, getString(R.string.model_copying), Snackbar.LENGTH_INDEFINITE)
+        snack.show()
+
+        lifecycleScope.launch {
+            val destPath = withContext(Dispatchers.IO) {
+                runCatching {
+                    val modelsDir = File(filesDir, "models").apply { mkdirs() }
+                    val fileName = resolveFileName(uri) ?: "model.task"
+                    val destFile = File(modelsDir, fileName)
+                    contentResolver.openInputStream(uri)?.use { input ->
+                        FileOutputStream(destFile).use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                    destFile.absolutePath
+                }.getOrNull()
+            }
+
+            snack.dismiss()
+            if (destPath != null) {
+                binding.etModelPath.setText(destPath)
+                Snackbar.make(binding.root, getString(R.string.model_ready), Snackbar.LENGTH_SHORT).show()
+            } else {
+                Snackbar.make(binding.root, getString(R.string.model_copy_failed), Snackbar.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    /** Resolves a human-readable file name from a content URI. */
+    private fun resolveFileName(uri: Uri): String? {
+        if (uri.scheme == "file") return File(uri.path ?: return null).name
+        return contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+            if (cursor.moveToFirst() && nameIndex >= 0) cursor.getString(nameIndex) else null
+        }
+    }
+
     private fun setupTemperatureSlider() {
         binding.seekTemperature.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
@@ -66,6 +150,14 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun savePrefs() {
+        // On-device
+        Prefs.putBoolean(this, Prefs.KEY_ON_DEVICE_ENABLED, binding.switchOnDevice.isChecked)
+        Prefs.putString(
+            this, Prefs.KEY_ON_DEVICE_MODEL_PATH,
+            binding.etModelPath.text.toString().trim()
+        )
+
+        // Remote API
         Prefs.putString(
             this, Prefs.KEY_LLM_ENDPOINT,
             binding.etLlmEndpoint.text.toString().trim().ifBlank { Prefs.DEFAULT_ENDPOINT }
@@ -102,3 +194,4 @@ class SettingsActivity : AppCompatActivity() {
         return true
     }
 }
+

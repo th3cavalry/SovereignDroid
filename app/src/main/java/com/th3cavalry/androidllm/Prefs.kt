@@ -32,6 +32,10 @@ object Prefs {
     // MCP servers
     const val KEY_MCP_SERVERS = "mcp_servers"
 
+    // On-device inference
+    const val KEY_ON_DEVICE_ENABLED = "on_device_enabled"
+    const val KEY_ON_DEVICE_MODEL_PATH = "on_device_model_path"
+
     // Defaults
     const val DEFAULT_ENDPOINT = "http://localhost:11434/v1"
     const val DEFAULT_MODEL = "llama3.2"
@@ -58,6 +62,12 @@ object Prefs {
 
     fun putFloat(context: Context, key: String, value: Float) =
         prefs(context).edit().putFloat(key, value).apply()
+
+    fun getBoolean(context: Context, key: String, default: Boolean = false): Boolean =
+        prefs(context).getBoolean(key, default)
+
+    fun putBoolean(context: Context, key: String, value: Boolean) =
+        prefs(context).edit().putBoolean(key, value).apply()
 
     fun getMCPServers(context: Context): List<MCPServer> {
         val json = getString(context, KEY_MCP_SERVERS)

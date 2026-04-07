@@ -4,7 +4,8 @@ An Android app that runs an LLM (Large Language Model) with agentic capabilities
 
 ## Features
 
-- 💬 **LLM Chat** — Connect to any OpenAI-compatible API endpoint (Ollama, LM Studio, OpenAI, etc.)
+- 📱 **On-Device Inference** — Run LLMs locally on your Android device (no internet needed for inference!) using [MediaPipe LLM Inference API](https://ai.google.dev/edge/mediapipe/solutions/genai/llm_inference/android). Supports Gemma 2B/7B, Phi-2, Falcon 1B, and more.
+- 💬 **Remote LLM Chat** — Connect to any OpenAI-compatible API endpoint (Ollama, LM Studio, OpenAI, etc.)
 - 🔧 **Tool Calling** — Full agentic loop: the LLM decides when to use tools and processes results automatically
 - 🌐 **Web Search** — DuckDuckGo (free, no key needed), Brave Search, or SerpAPI
 - 🔗 **URL Fetching** — Fetches and reads web pages via [Jina Reader](https://r.jina.ai)
@@ -33,6 +34,38 @@ An Android app that runs an LLM (Large Language Model) with agentic capabilities
    ```
 
 ### Configuration (in-app Settings)
+
+#### On-Device Inference (new!)
+
+| Setting | Description |
+|---|---|
+| Run LLM locally | Toggle to enable on-device inference (no internet required for the model) |
+| Model file path | Absolute path to a `.task` model file |
+| Browse… | File picker — copies the selected `.task` file to internal storage |
+
+**Supported models (download `.task` files from Kaggle):**
+
+| Model | Size | Recommended for |
+|---|---|---|
+| [Gemma 2B-IT (INT4)](https://www.kaggle.com/models/google/gemma/frameworks/tfLite/variations/gemma-2b-it-gpu-int4) | ~1.4 GB | Best quality/size balance |
+| Gemma 7B-IT | ~4 GB | Best quality (needs 8 GB+ RAM) |
+| Phi-2 | ~1.6 GB | Good English reasoning |
+| Falcon 1B | ~1 GB | Fastest inference |
+
+Steps to use on-device inference:
+1. Download a `.task` model file to your device (e.g., via browser to Downloads)
+2. In Settings, enable "Run LLM locally on this device"
+3. Tap **Browse…** and select the `.task` file — the app copies it to internal storage
+4. Or push via ADB: `adb push gemma2b-it.task /data/data/com.th3cavalry.androidllm/files/models/`
+5. Enter the path manually or confirm the auto-set path
+6. Chat — inference now runs 100% on-device!
+
+> **Device requirements for on-device inference:**  
+> - Android 10 (API 29) or higher  
+> - 4+ GB RAM for Gemma 2B  
+> - GPU recommended (Adreno 650+ or Mali-G78+); falls back to CPU automatically
+
+#### Remote API Settings
 
 | Setting | Description |
 |---|---|
@@ -87,7 +120,8 @@ app/src/main/java/com/th3cavalry/androidllm/
 │   ├── RetrofitClient.kt     # HTTP client builder
 │   └── dto/ChatDto.kt        # Request/response DTOs
 ├── service/
-│   ├── LLMService.kt         # LLM + agentic tool loop
+│   ├── LLMService.kt         # Remote LLM + agentic tool loop (OpenAI function calling)
+│   ├── OnDeviceInferenceService.kt  # On-device inference via MediaPipe LLM
 │   ├── WebSearchService.kt   # Web search + URL fetching
 │   ├── SSHService.kt         # SSH via JSch
 │   ├── GitHubService.kt      # GitHub REST API
@@ -116,6 +150,7 @@ Example MCP servers to try:
 
 | Library | Purpose |
 |---|---|
+| MediaPipe `tasks-genai` | On-device LLM inference (Gemma, Phi, Falcon) |
 | Retrofit2 + OkHttp3 | LLM API and HTTP requests |
 | Gson | JSON serialization |
 | JSch (mwiede fork) | SSH client |

@@ -72,6 +72,10 @@ dependencies {
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     implementation("com.google.code.gson:gson:2.11.0")
 
+    // On-device LLM inference (MediaPipe LLM Inference API)
+    // Supports Gemma, Phi, Falcon, StableLM in .task format
+    implementation("com.google.mediapipe:tasks-genai:0.10.22")
+
     // SSH client
     implementation("com.github.mwiede:jsch:0.2.17")
 

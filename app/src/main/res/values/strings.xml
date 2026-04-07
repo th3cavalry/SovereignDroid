@@ -10,8 +10,19 @@
     <string name="clear">Clear</string>
     <string name="connect">Connect</string>
 
+    <!-- On-device inference -->
+    <string name="section_on_device">On-Device Inference</string>
+    <string name="on_device_enabled">Run LLM locally on this device</string>
+    <string name="on_device_hint">When enabled, inference runs on-device using MediaPipe.\nOtherwise the remote API endpoint is used.</string>
+    <string name="on_device_model_path">Model file path (.task format)</string>
+    <string name="browse_model">Browse…</string>
+    <string name="model_copying">Copying model to internal storage…</string>
+    <string name="model_ready">Model ready</string>
+    <string name="model_copy_failed">Failed to copy model</string>
+    <string name="supported_models">Supported: Gemma 2B-IT, Phi-2, Falcon 1B (.task files).\nDownload from kaggle.com/models/google/gemma</string>
+
     <!-- Settings labels -->
-    <string name="section_llm">LLM Configuration</string>
+    <string name="section_llm">Remote API (when on-device is off)</string>
     <string name="llm_endpoint">API Endpoint (e.g. http://localhost:11434/v1)</string>
     <string name="llm_api_key">API Key (leave blank for Ollama)</string>
     <string name="llm_model">Model name</string>
