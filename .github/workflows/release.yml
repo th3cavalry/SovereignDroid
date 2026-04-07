@@ -1,0 +1,71 @@
+name: Release APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v0.0.1-alpha)'
+        required: true
+        default: 'v0.0.1-alpha'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build debug APK
+        run: ./gradlew assembleDebug
+
+      - name: Determine tag name and create tag if needed
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.tag }}"
+            echo "name=${TAG}" >> "$GITHUB_OUTPUT"
+            # Create and push the tag if it doesn't already exist
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            if ! git ls-remote --tags origin "refs/tags/${TAG}" | grep -q "${TAG}"; then
+              git tag "${TAG}"
+              git push origin "${TAG}"
+            fi
+          else
+            echo "name=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Rename APK
+        run: |
+          TAG="${{ steps.tag.outputs.name }}"
+          cp app/build/outputs/apk/debug/app-debug.apk \
+             "app/build/outputs/apk/debug/android-llm-${TAG}.apk"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.name }}
+          name: ${{ steps.tag.outputs.name }}
+          prerelease: ${{ contains(steps.tag.outputs.name, 'alpha') || contains(steps.tag.outputs.name, 'beta') }}
+          body: |
+            Android LLM — debug build ${{ steps.tag.outputs.name }}
+
+            Install the APK on your Android device (minSdk 26 / Android 8.0+).
+            > **Note:** This is a debug build; you will need to enable *Install from unknown sources* on your device.
+          files: |
+            app/build/outputs/apk/debug/android-llm-${{ steps.tag.outputs.name }}.apk
