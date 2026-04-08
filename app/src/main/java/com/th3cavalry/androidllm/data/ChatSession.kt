@@ -6,7 +6,7 @@ data class ChatSession(
     val id: Long,
     /** Human-readable title derived from the first user message. */
     val title: String,
-    /** ISO-8601 timestamp string for display purposes. */
+    /** Epoch milliseconds timestamp for display purposes. */
     val timestamp: Long,
     /** Full message history (excluding the system prompt). */
     val messages: List<ChatMessage>

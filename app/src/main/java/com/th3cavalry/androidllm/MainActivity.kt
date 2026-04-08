@@ -181,15 +181,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         val options = savedModels.toTypedArray()
-        val currentIdx = options.indexOf(currentModel).coerceAtLeast(0)
+        val currentIdx = options.indexOf(currentModel).takeIf { it >= 0 } ?: -1
 
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.action_clear_chat))
             .setSingleChoiceItems(options, currentIdx, null)
             .setPositiveButton(getString(R.string.clear)) { dialog, _ ->
                 val d = dialog as AlertDialog
-                val selectedModel = options[d.listView.checkedItemPosition]
-                Prefs.putString(this, Prefs.KEY_LLM_MODEL, selectedModel)
+                val pos = d.listView.checkedItemPosition
+                if (pos >= 0 && pos < options.size) {
+                    Prefs.putString(this, Prefs.KEY_LLM_MODEL, options[pos])
+                }
                 viewModel.clearHistory()
             }
             .setNegativeButton(getString(R.string.cancel), null)

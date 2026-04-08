@@ -127,11 +127,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     fun saveCurrentSession() {
         val visibleMessages = history.filterVisible()
         if (visibleMessages.isEmpty()) return
-        val title = visibleMessages.firstOrNull { it.role == MessageRole.USER }
-            ?.content?.take(60) ?: "Chat"
         val session = ChatSession(
             id = activeSessionId,
-            title = title,
+            title = sessionTitle(visibleMessages),
             timestamp = activeSessionId,
             messages = visibleMessages
         )
@@ -445,16 +443,18 @@ After a tool result is given, continue reasoning. When you have the final answer
     private fun autoSaveSession() {
         val visibleMessages = history.filterVisible()
         if (visibleMessages.none { it.role == MessageRole.USER }) return
-        val title = visibleMessages.firstOrNull { it.role == MessageRole.USER }
-            ?.content?.take(60) ?: "Chat"
         val session = ChatSession(
             id = activeSessionId,
-            title = title,
+            title = sessionTitle(visibleMessages),
             timestamp = activeSessionId,
             messages = visibleMessages
         )
         Prefs.saveSession(getApplication(), session)
     }
+
+    /** Derives a human-readable title from the first user message in a message list. */
+    private fun sessionTitle(messages: List<ChatMessage>): String =
+        messages.firstOrNull { it.role == MessageRole.USER }?.content?.take(60) ?: "Chat"
 
     override fun onCleared() {
         super.onCleared()
