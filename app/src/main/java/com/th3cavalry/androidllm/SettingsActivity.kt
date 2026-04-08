@@ -143,6 +143,9 @@ class SettingsActivity : AppCompatActivity() {
             this, Prefs.KEY_SHOW_RESPONSE_INFO, false
         )
 
+        // System prompt
+        binding.etSystemPrompt.setText(Prefs.getString(this, Prefs.KEY_SYSTEM_PROMPT))
+
         // Restore previously fetched remote model list
         restoreRemoteModelsSpinner(Prefs.getRemoteModelIds(this))
     }
@@ -391,6 +394,9 @@ class SettingsActivity : AppCompatActivity() {
         // Chat appearance
         Prefs.putBoolean(this, Prefs.KEY_HIDE_TOOL_MESSAGES, binding.switchHideToolMessages.isChecked)
         Prefs.putBoolean(this, Prefs.KEY_SHOW_RESPONSE_INFO, binding.switchShowResponseInfo.isChecked)
+
+        // System prompt
+        Prefs.putString(this, Prefs.KEY_SYSTEM_PROMPT, binding.etSystemPrompt.text.toString().trim())
     }
 
     override fun onResume() {

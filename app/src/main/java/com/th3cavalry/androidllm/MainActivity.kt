@@ -6,6 +6,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.inputmethod.EditorInfo
+import android.widget.EditText
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -23,6 +24,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val viewModel: ChatViewModel by viewModels()
     private val chatAdapter = ChatAdapter()
+
+    companion object {
+        private const val MAX_DIALOG_TITLE_LENGTH = 60
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,6 +61,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupInput() {
         binding.btnSend.setOnClickListener { sendMessage() }
+        binding.btnStop.setOnClickListener { viewModel.stopGeneration() }
 
         binding.etInput.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEND) {
@@ -83,7 +89,8 @@ class MainActivity : AppCompatActivity() {
 
         viewModel.isLoading.observe(this) { loading ->
             binding.progressBar.visibility = if (loading) View.VISIBLE else View.GONE
-            binding.btnSend.isEnabled = !loading
+            binding.btnSend.visibility = if (loading) View.GONE else View.VISIBLE
+            binding.btnStop.visibility = if (loading) View.VISIBLE else View.GONE
             binding.etInput.isEnabled = !loading
         }
 
@@ -126,11 +133,15 @@ class MainActivity : AppCompatActivity() {
                 showModelPickerThenClear()
                 true
             }
+            R.id.action_about -> {
+                startActivity(Intent(this, AboutActivity::class.java))
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
 
-    /** Shows the saved chat history in a dialog; lets the user load or delete a session. */
+    /** Shows the saved chat history in a dialog; lets the user open, rename, or delete a session. */
     private fun showChatHistoryDialog() {
         val sessions = Prefs.getSavedSessions(this)
         if (sessions.isEmpty()) {
@@ -145,9 +156,60 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.chat_history_title))
             .setItems(titles) { _, idx ->
-                viewModel.loadSession(sessions[idx])
+                showSessionOptionsDialog(sessions[idx].id, sessions[idx].title)
             }
             .setNeutralButton(getString(R.string.cancel), null)
+            .show()
+    }
+
+    /** Shows Open / Rename / Delete options for a single saved session. */
+    private fun showSessionOptionsDialog(sessionId: Long, sessionTitle: String) {
+        val options = arrayOf(
+            getString(R.string.session_open),
+            getString(R.string.session_rename),
+            getString(R.string.delete)
+        )
+        AlertDialog.Builder(this)
+            .setTitle(sessionTitle.take(MAX_DIALOG_TITLE_LENGTH))
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> {
+                        val session = Prefs.getSavedSessions(this).firstOrNull { it.id == sessionId }
+                        if (session != null) viewModel.loadSession(session)
+                    }
+                    1 -> showRenameSessionDialog(sessionId, sessionTitle)
+                    2 -> {
+                        AlertDialog.Builder(this)
+                            .setMessage(getString(R.string.delete_chat_confirm))
+                            .setPositiveButton(getString(R.string.delete)) { _, _ ->
+                                Prefs.deleteSession(this, sessionId)
+                            }
+                            .setNegativeButton(getString(R.string.cancel), null)
+                            .show()
+                    }
+                }
+            }
+            .setNegativeButton(getString(R.string.cancel), null)
+            .show()
+    }
+
+    /** Shows an EditText dialog that lets the user rename a saved session. */
+    private fun showRenameSessionDialog(sessionId: Long, currentTitle: String) {
+        val input = EditText(this).apply {
+            setText(currentTitle)
+            selectAll()
+            setSingleLine()
+        }
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.session_rename))
+            .setView(input)
+            .setPositiveButton(getString(R.string.rename)) { _, _ ->
+                val newTitle = input.text.toString().trim()
+                if (newTitle.isNotEmpty()) {
+                    Prefs.renameSession(this, sessionId, newTitle)
+                }
+            }
+            .setNegativeButton(getString(R.string.cancel), null)
             .show()
     }
 

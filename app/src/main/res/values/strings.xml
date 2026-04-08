@@ -6,6 +6,8 @@
     <string name="mcp_servers">MCP Servers</string>
     <string name="message_hint">Message…</string>
     <string name="send">Send</string>
+    <string name="stop_generation">Stop</string>
+    <string name="copied_to_clipboard">Copied to clipboard</string>
     <string name="run">Run</string>
     <string name="clear">Clear</string>
     <string name="connect">Connect</string>
@@ -106,6 +108,15 @@
     <string name="action_clear_chat">Clear chat</string>
     <string name="action_save_chat">Save chat</string>
     <string name="action_history">Chat history</string>
+    <string name="action_about">About</string>
+
+    <!-- About -->
+    <string name="about">About</string>
+    <string name="about_version_label">Version</string>
+    <string name="about_github_label">GitHub</string>
+    <string name="about_github_url">https://github.com/th3cavalry/Android-llm</string>
+    <string name="about_license_label">License</string>
+    <string name="about_license">MIT</string>
 
     <!-- Chat appearance settings -->
     <string name="section_chat_appearance">Chat Appearance</string>
@@ -113,6 +124,11 @@
     <string name="hide_tool_messages_hint">When enabled, only the final AI response is shown — tool calls and results are hidden.</string>
     <string name="show_response_info">Show response info (model · tokens · time)</string>
     <string name="show_response_info_hint">Displays model name, token count, and response time below each AI message.</string>
+
+    <!-- System prompt -->
+    <string name="section_system_prompt">System Prompt</string>
+    <string name="system_prompt_hint">System prompt (leave blank to use default)</string>
+    <string name="system_prompt_description">Sets the AI\'s persona and instructions for every conversation. Leave blank to use the built-in default.</string>
 
     <!-- Remote model fetch -->
     <string name="fetch_models">Fetch models</string>
@@ -126,6 +142,9 @@
     <string name="no_saved_chats">No saved chats yet.</string>
     <string name="chat_saved">Chat saved.</string>
     <string name="delete_chat_confirm">Delete this chat?</string>
+    <string name="session_open">Open</string>
+    <string name="session_rename">Rename</string>
+    <string name="rename">Rename</string>
 
     <!-- Search providers -->
     <string-array name="search_providers">

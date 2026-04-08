@@ -22,6 +22,7 @@ import com.th3cavalry.androidllm.service.LiteRtLmBackend
 import com.th3cavalry.androidllm.service.MCPClient
 import com.th3cavalry.androidllm.service.OnDeviceInferenceService
 import com.th3cavalry.androidllm.service.ToolExecutor
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 import java.util.concurrent.atomic.AtomicInteger
@@ -60,6 +61,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     /** Lazily created; only one backend is alive at a time. */
     private var activeBackend: InferenceBackend? = null
 
+    /** The currently running generation job, cancellable via [stopGeneration]. */
+    private var currentJob: Job? = null
+
     companion object {
         /** MediaPipe caps on-device generation; keep below the model's context window. */
         private const val MAX_ON_DEVICE_TOKENS = 1024
@@ -72,8 +76,13 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     init {
-        history.add(ChatMessage(role = MessageRole.SYSTEM, content = LLMService.SYSTEM_PROMPT))
+        history.add(ChatMessage(role = MessageRole.SYSTEM, content = systemPrompt()))
     }
+
+    /** Returns the user-configured system prompt, falling back to the built-in default. */
+    private fun systemPrompt(): String =
+        Prefs.getString(getApplication(), Prefs.KEY_SYSTEM_PROMPT)
+            .ifBlank { LLMService.SYSTEM_PROMPT }
 
     /**
      * Sends the user's message and runs the appropriate agentic loop based on
@@ -93,7 +102,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             getApplication(), Prefs.KEY_INFERENCE_BACKEND, Prefs.BACKEND_REMOTE
         )
 
-        viewModelScope.launch {
+        currentJob = viewModelScope.launch {
             try {
                 when (backendKey) {
                     Prefs.BACKEND_MEDIAPIPE -> runOnDeviceLoop(userText, getOrCreateBackend<OnDeviceInferenceService>())
@@ -107,6 +116,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     else -> runRemoteLoop() // BACKEND_REMOTE (default)
                 }
             } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 _error.postValue("Error: ${e.message}")
             } finally {
                 _isLoading.postValue(false)
@@ -115,10 +125,17 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /** Cancels the currently running generation, if any. */
+    fun stopGeneration() {
+        currentJob?.cancel()
+        currentJob = null
+        _isLoading.postValue(false)
+    }
+
     /** Clears the conversation (keeps the system prompt) and resets the session ID. */
     fun clearHistory() {
         history.clear()
-        history.add(ChatMessage(role = MessageRole.SYSTEM, content = LLMService.SYSTEM_PROMPT))
+        history.add(ChatMessage(role = MessageRole.SYSTEM, content = systemPrompt()))
         _messages.value = emptyList()
         activeSessionId = System.currentTimeMillis()
     }
@@ -139,7 +156,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     /** Loads a previously saved session into the active chat. */
     fun loadSession(session: ChatSession) {
         history.clear()
-        history.add(ChatMessage(role = MessageRole.SYSTEM, content = LLMService.SYSTEM_PROMPT))
+        history.add(ChatMessage(role = MessageRole.SYSTEM, content = systemPrompt()))
         history.addAll(session.messages)
         activeSessionId = session.id
         _messages.value = history.filterVisible()
