@@ -15,7 +15,16 @@ data class ChatMessage(
     @SerializedName("tool_calls") val toolCalls: List<ToolCallData>? = null,
     @SerializedName("tool_call_id") val toolCallId: String? = null,
     /** Display name for tool results shown in the UI */
-    val toolName: String? = null
+    val toolName: String? = null,
+    /** Optional metadata shown under assistant responses (model, tokens, time). */
+    val responseInfo: ResponseInfo? = null
+)
+
+/** Metadata attached to the final assistant response message. */
+data class ResponseInfo(
+    val model: String,
+    val totalTokens: Int?,
+    val durationMs: Long
 )
 
 data class ToolCallData(

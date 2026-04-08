@@ -8,9 +8,11 @@ import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.th3cavalry.androidllm.Prefs
 import com.th3cavalry.androidllm.data.ChatMessage
+import com.th3cavalry.androidllm.data.ChatSession
 import com.th3cavalry.androidllm.data.FunctionCallData
 import com.th3cavalry.androidllm.data.MCPServer
 import com.th3cavalry.androidllm.data.MessageRole
+import com.th3cavalry.androidllm.data.ResponseInfo
 import com.th3cavalry.androidllm.data.ToolCallData
 import com.th3cavalry.androidllm.network.dto.ToolDto
 import com.th3cavalry.androidllm.service.GeminiNanoBackend
@@ -49,6 +51,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
     /** Mutable conversation history (passed to the LLM each turn). */
     private val history: MutableList<ChatMessage> = mutableListOf()
+
+    /** ID of the active session (set when the user first sends a message or loads a session). */
+    private var activeSessionId: Long = System.currentTimeMillis()
 
     private val llmService = LLMService(application)
 
@@ -105,15 +110,41 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 _error.postValue("Error: ${e.message}")
             } finally {
                 _isLoading.postValue(false)
+                autoSaveSession()
             }
         }
     }
 
-    /** Clears the conversation (keeps the system prompt). */
+    /** Clears the conversation (keeps the system prompt) and resets the session ID. */
     fun clearHistory() {
         history.clear()
         history.add(ChatMessage(role = MessageRole.SYSTEM, content = LLMService.SYSTEM_PROMPT))
         _messages.value = emptyList()
+        activeSessionId = System.currentTimeMillis()
+    }
+
+    /** Saves the current chat session to persistent storage. */
+    fun saveCurrentSession() {
+        val visibleMessages = history.filterVisible()
+        if (visibleMessages.isEmpty()) return
+        val title = visibleMessages.firstOrNull { it.role == MessageRole.USER }
+            ?.content?.take(60) ?: "Chat"
+        val session = ChatSession(
+            id = activeSessionId,
+            title = title,
+            timestamp = activeSessionId,
+            messages = visibleMessages
+        )
+        Prefs.saveSession(getApplication(), session)
+    }
+
+    /** Loads a previously saved session into the active chat. */
+    fun loadSession(session: ChatSession) {
+        history.clear()
+        history.add(ChatMessage(role = MessageRole.SYSTEM, content = LLMService.SYSTEM_PROMPT))
+        history.addAll(session.messages)
+        activeSessionId = session.id
+        _messages.value = history.filterVisible()
     }
 
     // ─── Remote loop ───────────────────────────────────────────────────────────
@@ -225,6 +256,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         val toolCallEndTag = "</tool_call>"
 
         var iterations = 0
+        val startMs = System.currentTimeMillis()
 
         while (iterations < MAX_REACT_ITERATIONS) {
             iterations++
@@ -256,7 +288,12 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 if (toolCallMap == null) {
                     // Gson returned null (e.g., empty JSON); skip and treat as final answer
                     val finalText = rawResponse.trimAssistantPrefix()
-                    history.add(ChatMessage(role = MessageRole.ASSISTANT, content = finalText))
+                    val durationMs = System.currentTimeMillis() - startMs
+                    history.add(ChatMessage(
+                        role = MessageRole.ASSISTANT,
+                        content = finalText,
+                        responseInfo = ResponseInfo(backend.displayName, null, durationMs)
+                    ))
                     _messages.postValue(history.filterVisible())
                     break
                 }
@@ -307,7 +344,12 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
             } else {
                 // No tool call tag found → final answer
-                history.add(ChatMessage(role = MessageRole.ASSISTANT, content = rawResponse.trimAssistantPrefix()))
+                val durationMs = System.currentTimeMillis() - startMs
+                history.add(ChatMessage(
+                    role = MessageRole.ASSISTANT,
+                    content = rawResponse.trimAssistantPrefix(),
+                    responseInfo = ResponseInfo(backend.displayName, null, durationMs)
+                ))
                 _messages.postValue(history.filterVisible())
                 break
             }
@@ -383,13 +425,39 @@ After a tool result is given, continue reasoning. When you have the final answer
         return tools
     }
 
-    /** Filters out system messages for display. */
-    private fun List<ChatMessage>.filterVisible(): List<ChatMessage> =
-        filter { it.role != MessageRole.SYSTEM }
+    /**
+     * Filters messages for display, respecting the hide-tool-messages preference
+     * and always removing the SYSTEM prompt.
+     */
+    private fun List<ChatMessage>.filterVisible(): List<ChatMessage> {
+        val hideTools = Prefs.getBoolean(getApplication(), Prefs.KEY_HIDE_TOOL_MESSAGES, false)
+        return filter { msg ->
+            when {
+                msg.role == MessageRole.SYSTEM -> false
+                hideTools && msg.role == MessageRole.TOOL -> false
+                hideTools && msg.role == MessageRole.ASSISTANT && msg.toolCalls != null -> false
+                else -> true
+            }
+        }
+    }
+
+    /** Auto-saves the session after each user turn (if the chat is non-empty). */
+    private fun autoSaveSession() {
+        val visibleMessages = history.filterVisible()
+        if (visibleMessages.none { it.role == MessageRole.USER }) return
+        val title = visibleMessages.firstOrNull { it.role == MessageRole.USER }
+            ?.content?.take(60) ?: "Chat"
+        val session = ChatSession(
+            id = activeSessionId,
+            title = title,
+            timestamp = activeSessionId,
+            messages = visibleMessages
+        )
+        Prefs.saveSession(getApplication(), session)
+    }
 
     override fun onCleared() {
         super.onCleared()
         activeBackend?.close()
     }
 }
-

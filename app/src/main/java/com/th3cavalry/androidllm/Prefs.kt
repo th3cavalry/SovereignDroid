@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.th3cavalry.androidllm.data.ChatSession
 import com.th3cavalry.androidllm.data.MCPServer
 
 object Prefs {
@@ -32,6 +33,12 @@ object Prefs {
     // MCP servers
     const val KEY_MCP_SERVERS = "mcp_servers"
 
+    // UI toggles
+    /** When true, tool-call and tool-result messages are hidden from the chat UI. */
+    const val KEY_HIDE_TOOL_MESSAGES = "hide_tool_messages"
+    /** When true, show model/tokens/time metadata below each assistant response. */
+    const val KEY_SHOW_RESPONSE_INFO = "show_response_info"
+
     // Inference backend selection
     // Replaces the old binary KEY_ON_DEVICE_ENABLED toggle.
     const val KEY_INFERENCE_BACKEND = "inference_backend"
@@ -54,7 +61,10 @@ object Prefs {
     @Deprecated("Use KEY_INFERENCE_BACKEND instead", ReplaceWith("KEY_INFERENCE_BACKEND"))
     const val KEY_ON_DEVICE_ENABLED = "on_device_enabled"
 
-    // Defaults
+    // Chat history
+    private const val KEY_CHAT_SESSIONS = "chat_sessions"
+    /** Maximum number of saved chat sessions to keep. Oldest are dropped when exceeded. */
+    private const val MAX_SAVED_SESSIONS = 50
     const val DEFAULT_ENDPOINT = "http://localhost:11434/v1"
     const val DEFAULT_MODEL = "llama3.2"
     const val DEFAULT_MAX_TOKENS = 4096
@@ -100,5 +110,55 @@ object Prefs {
 
     fun saveMCPServers(context: Context, servers: List<MCPServer>) {
         putString(context, KEY_MCP_SERVERS, Gson().toJson(servers))
+    }
+
+    // ─── Chat session persistence ─────────────────────────────────────────────
+
+    fun getSavedSessions(context: Context): List<ChatSession> {
+        val json = getString(context, KEY_CHAT_SESSIONS)
+        if (json.isEmpty()) return emptyList()
+        return try {
+            val type = object : TypeToken<List<ChatSession>>() {}.type
+            Gson().fromJson(json, type) ?: emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    fun saveSession(context: Context, session: ChatSession) {
+        val sessions = getSavedSessions(context).toMutableList()
+        // Replace existing session with the same id or prepend a new one
+        val idx = sessions.indexOfFirst { it.id == session.id }
+        if (idx >= 0) sessions[idx] = session else sessions.add(0, session)
+        // Trim to cap
+        val trimmed = if (sessions.size > MAX_SAVED_SESSIONS) {
+            sessions.take(MAX_SAVED_SESSIONS)
+        } else sessions
+        putString(context, KEY_CHAT_SESSIONS, Gson().toJson(trimmed))
+    }
+
+    fun deleteSession(context: Context, sessionId: Long) {
+        val sessions = getSavedSessions(context).filter { it.id != sessionId }
+        putString(context, KEY_CHAT_SESSIONS, Gson().toJson(sessions))
+    }
+
+    // ─── Remote model cache ───────────────────────────────────────────────────
+
+    private const val KEY_REMOTE_MODEL_IDS = "remote_model_ids"
+
+    /** Returns the cached list of model IDs fetched from the remote endpoint. */
+    fun getRemoteModelIds(context: Context): List<String> {
+        val json = getString(context, KEY_REMOTE_MODEL_IDS)
+        if (json.isEmpty()) return emptyList()
+        return try {
+            val type = object : TypeToken<List<String>>() {}.type
+            Gson().fromJson(json, type) ?: emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    fun saveRemoteModelIds(context: Context, ids: List<String>) {
+        putString(context, KEY_REMOTE_MODEL_IDS, Gson().toJson(ids))
     }
 }

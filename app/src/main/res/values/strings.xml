@@ -104,6 +104,28 @@
     <string name="action_terminal">Terminal</string>
     <string name="action_mcp">MCP Servers</string>
     <string name="action_clear_chat">Clear chat</string>
+    <string name="action_save_chat">Save chat</string>
+    <string name="action_history">Chat history</string>
+
+    <!-- Chat appearance settings -->
+    <string name="section_chat_appearance">Chat Appearance</string>
+    <string name="hide_tool_messages">Hide tool calls and results</string>
+    <string name="hide_tool_messages_hint">When enabled, only the final AI response is shown — tool calls and results are hidden.</string>
+    <string name="show_response_info">Show response info (model · tokens · time)</string>
+    <string name="show_response_info_hint">Displays model name, token count, and response time below each AI message.</string>
+
+    <!-- Remote model fetch -->
+    <string name="fetch_models">Fetch models</string>
+    <string name="fetching_models">Fetching models…</string>
+    <string name="fetch_models_failed">Failed to fetch models: %1$s</string>
+    <string name="no_models_available">No models available</string>
+    <string name="select_model_hint">Select a model from the list above or type a name manually.</string>
+
+    <!-- Chat history -->
+    <string name="chat_history_title">Previous Chats</string>
+    <string name="no_saved_chats">No saved chats yet.</string>
+    <string name="chat_saved">Chat saved.</string>
+    <string name="delete_chat_confirm">Delete this chat?</string>
 
     <!-- Search providers -->
     <string-array name="search_providers">

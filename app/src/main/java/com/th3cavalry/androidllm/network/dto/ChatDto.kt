@@ -63,3 +63,16 @@ data class UsageDto(
     @SerializedName("completion_tokens") val completionTokens: Int,
     @SerializedName("total_tokens") val totalTokens: Int
 )
+
+// ─── Models list ─────────────────────────────────────────────────────────────
+
+data class ModelsResponse(
+    val `object`: String?,
+    val data: List<ModelDto>
+)
+
+data class ModelDto(
+    val id: String,
+    val `object`: String?,
+    val owned_by: String?
+)

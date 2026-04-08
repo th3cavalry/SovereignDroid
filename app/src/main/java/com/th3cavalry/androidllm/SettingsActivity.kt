@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import android.widget.ArrayAdapter
 import android.widget.RadioGroup
 import android.widget.SeekBar
 import androidx.activity.result.contract.ActivityResultContracts
@@ -11,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.snackbar.Snackbar
 import com.th3cavalry.androidllm.databinding.ActivitySettingsBinding
+import com.th3cavalry.androidllm.network.RetrofitClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -77,6 +79,7 @@ class SettingsActivity : AppCompatActivity() {
         setupTemperatureSlider()
         setupBackendSelector()
         setupBrowseButtons()
+        setupFetchModels()
     }
 
     private fun loadPrefs() {
@@ -131,6 +134,17 @@ class SettingsActivity : AppCompatActivity() {
         binding.etSshDefaultHost.setText(Prefs.getString(this, Prefs.KEY_SSH_DEFAULT_HOST))
         binding.etSshDefaultUser.setText(Prefs.getString(this, Prefs.KEY_SSH_DEFAULT_USER))
         binding.etSshPrivateKey.setText(Prefs.getString(this, Prefs.KEY_SSH_DEFAULT_KEY))
+
+        // Chat appearance toggles
+        binding.switchHideToolMessages.isChecked = Prefs.getBoolean(
+            this, Prefs.KEY_HIDE_TOOL_MESSAGES, false
+        )
+        binding.switchShowResponseInfo.isChecked = Prefs.getBoolean(
+            this, Prefs.KEY_SHOW_RESPONSE_INFO, false
+        )
+
+        // Restore previously fetched remote model list
+        restoreRemoteModelsSpinner(Prefs.getRemoteModelIds(this))
     }
 
     private fun setupBackendSelector() {
@@ -184,6 +198,84 @@ class SettingsActivity : AppCompatActivity() {
                     .putExtra(ModelBrowserActivity.EXTRA_BACKEND_ID, Prefs.BACKEND_LITERT_LM)
             )
         }
+    }
+
+    /** Wires the "Fetch models" button to call GET /v1/models on the configured endpoint. */
+    private fun setupFetchModels() {
+        binding.btnFetchModels.setOnClickListener {
+            val endpoint = binding.etLlmEndpoint.text.toString().trim().ifBlank { Prefs.DEFAULT_ENDPOINT }
+            val apiKey = binding.etLlmApiKey.text.toString().trim()
+            val auth = if (apiKey.isBlank()) "Bearer none" else "Bearer $apiKey"
+
+            binding.btnFetchModels.isEnabled = false
+            val snack = Snackbar.make(binding.root, getString(R.string.fetching_models), Snackbar.LENGTH_INDEFINITE)
+            snack.show()
+
+            lifecycleScope.launch {
+                val result = withContext(Dispatchers.IO) {
+                    runCatching {
+                        RetrofitClient.buildLLMApi(endpoint).listModels(auth)
+                    }
+                }
+                snack.dismiss()
+                binding.btnFetchModels.isEnabled = true
+
+                val response = result.getOrElse { e ->
+                    Snackbar.make(
+                        binding.root,
+                        getString(R.string.fetch_models_failed, e.message ?: "unknown error"),
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                    return@launch
+                }
+
+                if (!response.isSuccessful) {
+                    Snackbar.make(
+                        binding.root,
+                        getString(R.string.fetch_models_failed, "HTTP ${response.code()}"),
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                    return@launch
+                }
+
+                val ids = response.body()?.data?.map { it.id }?.sorted() ?: emptyList()
+                if (ids.isEmpty()) {
+                    Snackbar.make(binding.root, getString(R.string.no_models_available), Snackbar.LENGTH_SHORT).show()
+                } else {
+                    Prefs.saveRemoteModelIds(this@SettingsActivity, ids)
+                    restoreRemoteModelsSpinner(ids)
+                    Snackbar.make(binding.root, "${ids.size} model(s) found", Snackbar.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    /** Populates (or refreshes) the remote-models spinner and wires selection to the model field. */
+    private fun restoreRemoteModelsSpinner(ids: List<String>) {
+        if (ids.isEmpty()) {
+            binding.spinnerRemoteModels.visibility = View.GONE
+            return
+        }
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, ids).also {
+            it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        }
+        binding.spinnerRemoteModels.adapter = adapter
+        binding.spinnerRemoteModels.visibility = View.VISIBLE
+
+        // Pre-select the currently configured model
+        val currentModel = binding.etLlmModel.text.toString().trim()
+        val idx = ids.indexOf(currentModel)
+        if (idx >= 0) binding.spinnerRemoteModels.setSelection(idx)
+
+        binding.spinnerRemoteModels.onItemSelectedListener =
+            object : android.widget.AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: android.widget.AdapterView<*>, view: View?, pos: Int, id: Long
+                ) {
+                    binding.etLlmModel.setText(ids[pos])
+                }
+                override fun onNothingSelected(parent: android.widget.AdapterView<*>) {}
+            }
     }
 
     /**
@@ -295,6 +387,10 @@ class SettingsActivity : AppCompatActivity() {
         Prefs.putString(this, Prefs.KEY_SSH_DEFAULT_HOST, binding.etSshDefaultHost.text.toString().trim())
         Prefs.putString(this, Prefs.KEY_SSH_DEFAULT_USER, binding.etSshDefaultUser.text.toString().trim())
         Prefs.putString(this, Prefs.KEY_SSH_DEFAULT_KEY, binding.etSshPrivateKey.text.toString().trim())
+
+        // Chat appearance
+        Prefs.putBoolean(this, Prefs.KEY_HIDE_TOOL_MESSAGES, binding.switchHideToolMessages.isChecked)
+        Prefs.putBoolean(this, Prefs.KEY_SHOW_RESPONSE_INFO, binding.switchShowResponseInfo.isChecked)
     }
 
     override fun onResume() {
@@ -314,4 +410,3 @@ class SettingsActivity : AppCompatActivity() {
         return true
     }
 }
-

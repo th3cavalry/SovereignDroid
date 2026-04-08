@@ -17,6 +17,9 @@ import io.noties.markwon.linkify.LinkifyPlugin
 
 class ChatAdapter : ListAdapter<ChatMessage, ChatAdapter.MessageViewHolder>(DiffCallback()) {
 
+    /** When true, the response-info footer (model · tokens · time) is shown under each reply. */
+    var showResponseInfo: Boolean = false
+
     companion object {
         private const val VIEW_USER = 0
         private const val VIEW_ASSISTANT = 1
@@ -77,6 +80,17 @@ class ChatAdapter : ListAdapter<ChatMessage, ChatAdapter.MessageViewHolder>(Diff
         private fun bindAssistant(message: ChatMessage) {
             val tv = itemView.findViewById<TextView>(R.id.tvContent)
             markwon.setMarkdown(tv, message.content ?: "")
+
+            val tvInfo = itemView.findViewById<TextView?>(R.id.tvResponseInfo)
+            val info = message.responseInfo
+            if (tvInfo != null && info != null && showResponseInfo) {
+                val secs = info.durationMs / 1000.0
+                val tokensText = if (info.totalTokens != null) " · ${info.totalTokens} tokens" else ""
+                tvInfo.text = "${info.model}$tokensText · ${"%.1f".format(secs)}s"
+                tvInfo.visibility = View.VISIBLE
+            } else {
+                tvInfo?.visibility = View.GONE
+            }
         }
 
         private fun bindToolCall(message: ChatMessage) {

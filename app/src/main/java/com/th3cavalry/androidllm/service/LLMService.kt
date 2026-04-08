@@ -3,6 +3,7 @@ package com.th3cavalry.androidllm.service
 import android.content.Context
 import com.google.gson.Gson
 import com.th3cavalry.androidllm.Prefs
+import com.th3cavalry.androidllm.data.ResponseInfo
 import com.th3cavalry.androidllm.data.ChatMessage
 import com.th3cavalry.androidllm.data.FunctionCallData
 import com.th3cavalry.androidllm.data.MessageRole
@@ -52,6 +53,7 @@ class LLMService(private val context: Context) {
         val api = buildApi()
         var iterations = 0
         val maxIterations = 10
+        val startMs = System.currentTimeMillis()
 
         while (iterations < maxIterations) {
             iterations++
@@ -122,7 +124,13 @@ class LLMService(private val context: Context) {
 
             // Plain text response — we're done
             val finalText = message.content ?: "(no response)"
-            history.add(ChatMessage(role = MessageRole.ASSISTANT, content = finalText))
+            val durationMs = System.currentTimeMillis() - startMs
+            val responseInfo = ResponseInfo(
+                model = body.model ?: model(),
+                totalTokens = body.usage?.totalTokens,
+                durationMs = durationMs
+            )
+            history.add(ChatMessage(role = MessageRole.ASSISTANT, content = finalText, responseInfo = responseInfo))
             return finalText
         }
 

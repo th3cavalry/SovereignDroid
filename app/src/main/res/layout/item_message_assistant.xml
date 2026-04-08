@@ -3,7 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
+    android:orientation="vertical"
     android:padding="12dp"
     android:gravity="start">
 
@@ -17,5 +17,14 @@
         android:textColor="@color/assistant_text"
         android:textSize="15sp"
         android:lineSpacingMultiplier="1.3" />
+
+    <TextView
+        android:id="@+id/tvResponseInfo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textSize="11sp"
+        android:textColor="?android:textColorSecondary"
+        android:visibility="gone" />
 
 </LinearLayout>
