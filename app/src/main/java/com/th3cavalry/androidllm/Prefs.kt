@@ -61,6 +61,9 @@ object Prefs {
     @Deprecated("Use KEY_INFERENCE_BACKEND instead", ReplaceWith("KEY_INFERENCE_BACKEND"))
     const val KEY_ON_DEVICE_ENABLED = "on_device_enabled"
 
+    // System prompt
+    const val KEY_SYSTEM_PROMPT = "system_prompt"
+
     // Chat history
     private const val KEY_CHAT_SESSIONS = "chat_sessions"
     /** Maximum number of saved chat sessions to keep. Oldest are dropped when exceeded. */
@@ -139,6 +142,13 @@ object Prefs {
 
     fun deleteSession(context: Context, sessionId: Long) {
         val sessions = getSavedSessions(context).filter { it.id != sessionId }
+        putString(context, KEY_CHAT_SESSIONS, Gson().toJson(sessions))
+    }
+
+    fun renameSession(context: Context, sessionId: Long, newTitle: String) {
+        val sessions = getSavedSessions(context).map { session ->
+            if (session.id == sessionId) session.copy(title = newTitle) else session
+        }
         putString(context, KEY_CHAT_SESSIONS, Gson().toJson(sessions))
     }
 

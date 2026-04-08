@@ -1,9 +1,13 @@
 package com.th3cavalry.androidllm.ui
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.Toast
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -75,11 +79,13 @@ class ChatAdapter : ListAdapter<ChatMessage, ChatAdapter.MessageViewHolder>(Diff
         private fun bindUser(message: ChatMessage) {
             val tv = itemView.findViewById<TextView>(R.id.tvContent)
             tv.text = message.content ?: ""
+            tv.setOnLongClickListener { copyToClipboard(message.content); true }
         }
 
         private fun bindAssistant(message: ChatMessage) {
             val tv = itemView.findViewById<TextView>(R.id.tvContent)
             markwon.setMarkdown(tv, message.content ?: "")
+            tv.setOnLongClickListener { copyToClipboard(message.content); true }
 
             val tvInfo = itemView.findViewById<TextView?>(R.id.tvResponseInfo)
             val info = message.responseInfo
@@ -91,6 +97,13 @@ class ChatAdapter : ListAdapter<ChatMessage, ChatAdapter.MessageViewHolder>(Diff
             } else {
                 tvInfo?.visibility = View.GONE
             }
+        }
+
+        private fun copyToClipboard(text: String?) {
+            if (text.isNullOrBlank()) return
+            val clipboard = itemView.context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            clipboard.setPrimaryClip(ClipData.newPlainText("message", text))
+            Toast.makeText(itemView.context, R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
         }
 
         private fun bindToolCall(message: ChatMessage) {

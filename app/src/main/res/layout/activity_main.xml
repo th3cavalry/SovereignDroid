@@ -81,6 +81,17 @@
                 app:icon="@drawable/ic_send"
                 app:iconSize="24dp" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnStop"
+                style="@style/Widget.Material3.Button.Icon"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="8dp"
+                android:visibility="gone"
+                android:contentDescription="@string/stop_generation"
+                app:icon="@drawable/ic_stop"
+                app:iconSize="20dp" />
+
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
