@@ -25,6 +25,10 @@ class MainActivity : AppCompatActivity() {
     private val viewModel: ChatViewModel by viewModels()
     private val chatAdapter = ChatAdapter()
 
+    companion object {
+        private const val MAX_DIALOG_TITLE_LENGTH = 60
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -166,7 +170,7 @@ class MainActivity : AppCompatActivity() {
             getString(R.string.delete)
         )
         AlertDialog.Builder(this)
-            .setTitle(sessionTitle.take(60))
+            .setTitle(sessionTitle.take(MAX_DIALOG_TITLE_LENGTH))
             .setItems(options) { _, which ->
                 when (which) {
                     0 -> {
