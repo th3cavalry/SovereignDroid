@@ -5,13 +5,16 @@
         SECURITY: Only allow non-sensitive app data to be backed up.
         Sensitive data (API keys, tokens, SSH keys) must NOT be backed up to Google Cloud.
         -->
+        <include domain="sharedpref" path="." />
         <exclude domain="sharedpref" path="secure_prefs.xml" />
+        <include domain="database" path="." />
         <exclude domain="database" path="*.db" />
-        <include domain="sharedpref" path="settings_prefs.xml" />
     </cloud-backup>
     <device-transfer>
         <!-- Device-to-device transfers should also exclude sensitive data -->
+        <include domain="sharedpref" path="." />
         <exclude domain="sharedpref" path="secure_prefs.xml" />
+        <include domain="database" path="." />
         <exclude domain="database" path="*.db" />
     </device-transfer>
 </data-extraction-rules>
