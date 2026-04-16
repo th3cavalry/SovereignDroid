@@ -75,7 +75,7 @@
                 android:layout_height="wrap_content"
                 android:text="@string/hide_tool_messages_hint"
                 android:textSize="12sp"
-                android:textColor="?android:textColorSecondary"
+                android:textColor="?android:attr/textColorSecondary"
                 android:layout_marginBottom="8dp" />
 
             <com.google.android.material.switchmaterial.SwitchMaterial
@@ -90,7 +90,7 @@
                 android:layout_height="wrap_content"
                 android:text="@string/show_response_info_hint"
                 android:textSize="12sp"
-                android:textColor="?android:textColorSecondary"
+                android:textColor="?android:attr/textColorSecondary"
                 android:layout_marginBottom="20dp" />
 
             <!-- ── System Prompt Section ── -->
@@ -123,7 +123,7 @@
                 android:layout_height="wrap_content"
                 android:text="@string/system_prompt_description"
                 android:textSize="12sp"
-                android:textColor="?android:textColorSecondary"
+                android:textColor="?android:attr/textColorSecondary"
                 android:layout_marginBottom="20dp" />
 
             <RadioGroup
@@ -212,7 +212,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/mediapipe_model_hint"
                     android:textSize="12sp"
-                    android:textColor="?android:textColorSecondary"
+                    android:textColor="?android:attr/textColorSecondary"
                     android:layout_marginBottom="12dp" />
 
             </LinearLayout>
@@ -260,7 +260,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/litert_lm_model_hint"
                     android:textSize="12sp"
-                    android:textColor="?android:textColorSecondary"
+                    android:textColor="?android:attr/textColorSecondary"
                     android:layout_marginBottom="12dp" />
 
             </LinearLayout>
@@ -283,7 +283,7 @@
                     android:text="@string/ollama_local_hint"
                     android:textSize="12sp"
                     android:padding="12dp"
-                    android:textColor="?android:textColorSecondary" />
+                    android:textColor="?android:attr/textColorSecondary" />
 
             </com.google.android.material.card.MaterialCardView>
 
@@ -305,7 +305,7 @@
                     android:text="@string/gemini_nano_hint"
                     android:textSize="12sp"
                     android:padding="12dp"
-                    android:textColor="?android:textColorSecondary" />
+                    android:textColor="?android:attr/textColorSecondary" />
 
             </com.google.android.material.card.MaterialCardView>
 
@@ -338,7 +338,7 @@
                 android:layout_height="wrap_content"
                 android:text="@string/hf_token_hint"
                 android:textSize="12sp"
-                android:textColor="?android:textColorSecondary"
+                android:textColor="?android:attr/textColorSecondary"
                 android:layout_marginBottom="20dp" />
 
             <!-- ── LLM Section ── -->

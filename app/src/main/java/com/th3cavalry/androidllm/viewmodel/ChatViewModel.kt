@@ -89,7 +89,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
      * the currently selected inference backend.
      */
     fun sendMessage(userText: String) {
-        if (userText.isBlank() || _isLoading.value == true) return
+        if (userText.isBlank() || _isLoading.value == true || currentJob?.isActive == true) return
 
         val userMsg = ChatMessage(role = MessageRole.USER, content = userText)
         history.add(userMsg)
@@ -127,9 +127,14 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
     /** Cancels the currently running generation, if any. */
     fun stopGeneration() {
-        currentJob?.cancel()
+        val job = currentJob ?: return
         currentJob = null
-        _isLoading.postValue(false)
+        // Use invokeOnCompletion to ensure UI is only disabled after the job truly completes.
+        // This prevents concurrent state mutations if the job is still running after cancel().
+        job.invokeOnCompletion {
+            _isLoading.postValue(false)
+        }
+        job.cancel()
     }
 
     /** Clears the conversation (keeps the system prompt) and resets the session ID. */
@@ -140,15 +145,18 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         activeSessionId = System.currentTimeMillis()
     }
 
-    /** Saves the current chat session to persistent storage. */
+    /** Saves the current chat session to persistent storage.
+     * Persists the full history (including tool messages) so saved chats are independent
+     * of display preferences. filterVisible() is applied only during rendering.
+     */
     fun saveCurrentSession() {
-        val visibleMessages = history.filterVisible()
-        if (visibleMessages.isEmpty()) return
+        val sessionMessages = history.filter { it.role != MessageRole.SYSTEM }
+        if (sessionMessages.isEmpty()) return
         val session = ChatSession(
             id = activeSessionId,
-            title = sessionTitle(visibleMessages),
+            title = sessionTitle(sessionMessages),
             timestamp = activeSessionId,
-            messages = visibleMessages
+            messages = sessionMessages
         )
         Prefs.saveSession(getApplication(), session)
     }

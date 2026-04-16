@@ -72,18 +72,18 @@ class WebSearchService(
                 .build()
             val response = httpClient.newCall(request).execute()
             val body = response.body?.string() ?: return "No response from Brave Search"
-            parseBraveResults(body)
+            parseBraveResults(body, numResults)
         } catch (e: Exception) {
             "Error with Brave Search: ${e.message}"
         }
     }
 
-    private fun parseBraveResults(json: String): String {
+    private fun parseBraveResults(json: String, maxResults: Int): String {
         return try {
             val response = gson.fromJson(json, BraveSearchResponse::class.java)
             val results = response.web?.results ?: return "No results found."
             val sb = StringBuilder("Search Results:\n\n")
-            results.take(5).forEachIndexed { i, result ->
+            results.take(maxResults).forEachIndexed { i, result ->
                 sb.append("${i + 1}. **${result.title}**\n   ${result.url}\n   ${result.description}\n\n")
             }
             if (sb.length <= "Search Results:\n\n".length) "No results found." else sb.toString()
@@ -101,18 +101,18 @@ class WebSearchService(
             val request = Request.Builder().url(url).build()
             val response = httpClient.newCall(request).execute()
             val body = response.body?.string() ?: return "No response from SerpAPI"
-            parseSerpApiResults(body)
+            parseSerpApiResults(body, numResults)
         } catch (e: Exception) {
             "Error with SerpAPI: ${e.message}"
         }
     }
 
-    private fun parseSerpApiResults(json: String): String {
+    private fun parseSerpApiResults(json: String, maxResults: Int): String {
         return try {
             val response = gson.fromJson(json, SerpApiResponse::class.java)
             val results = response.organic_results ?: return "No results found."
             val sb = StringBuilder("Search Results:\n\n")
-            results.take(5).forEachIndexed { i, result ->
+            results.take(maxResults).forEachIndexed { i, result ->
                 sb.append("${i + 1}. **${result.title}**\n   ${result.link}\n   ${result.snippet}\n\n")
             }
             if (sb.length <= "Search Results:\n\n".length) "No results found." else sb.toString()

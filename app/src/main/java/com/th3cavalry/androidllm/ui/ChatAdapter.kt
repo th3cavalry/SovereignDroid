@@ -23,6 +23,14 @@ class ChatAdapter : ListAdapter<ChatMessage, ChatAdapter.MessageViewHolder>(Diff
 
     /** When true, the response-info footer (model · tokens · time) is shown under each reply. */
     var showResponseInfo: Boolean = false
+        set(value) {
+            if (field == value) return
+            field = value
+            // Notify all rows that the response info visibility changed.
+            if (itemCount > 0) {
+                notifyItemRangeChanged(0, itemCount)
+            }
+        }
 
     companion object {
         private const val VIEW_USER = 0
