@@ -15,19 +15,14 @@ import androidx.appcompat.app.AppCompatActivity
  * Each [AppCompatActivity] should call [applyTheme] before [AppCompatActivity.super.onCreate]
  * so that the correct theme is in place when the layout is inflated.
  *
- * When the theme is changed in Settings, [markThemeChanged] is called so that other
- * activities know to recreate themselves in [onResume].
+ * ### Change propagation
+ * Instead of a shared mutable flag (which races when multiple activities are alive), each
+ * activity stores the theme index it was inflated with in [currentThemeIndex].  In `onResume`
+ * it calls [recreateIfNeeded], which compares the stored index with the current Prefs value
+ * and calls [AppCompatActivity.recreate] only when they differ.  This is safe across any
+ * number of concurrent activities and survives process death because the truth lives in Prefs.
  */
 object ThemeHelper {
-
-    /**
-     * Set to `true` by [markThemeChanged]; cleared when an activity observes the change
-     * and calls [recreateIfNeeded]. Activities check this in `onResume` to re-inflate with
-     * the new colors.
-     */
-    @Volatile
-    var themeChanged: Boolean = false
-        private set
 
     fun themeResId(context: Context): Int {
         return when (Prefs.getInt(context, Prefs.KEY_COLOR_THEME, 0)) {
@@ -39,26 +34,25 @@ object ThemeHelper {
     }
 
     /**
-     * Applies the stored color theme to [activity]. Call this **before** [AppCompatActivity.super.onCreate].
+     * Applies the stored color theme to [activity] and returns the applied theme index.
+     * Call this **before** [AppCompatActivity.super.onCreate] and store the returned value:
+     * ```
+     * private var appliedThemeIndex = ThemeHelper.applyTheme(this)
+     * ```
      */
-    fun applyTheme(activity: AppCompatActivity) {
+    fun applyTheme(activity: AppCompatActivity): Int {
+        val index = Prefs.getInt(activity, Prefs.KEY_COLOR_THEME, 0)
         activity.setTheme(themeResId(activity))
-    }
-
-    /** Signals that the user changed the theme; other activities should recreate on resume. */
-    fun markThemeChanged() {
-        themeChanged = true
+        return index
     }
 
     /**
-     * If the theme was changed since this activity was last created, recreates [activity]
-     * so it is re-inflated with the new colors. Call this in `onResume`.
-     *
-     * The flag is cleared inside this method so each activity recreates at most once per change.
+     * Call in `onResume`. Recreates [activity] if the theme stored in Prefs differs from
+     * [currentThemeIndex] (the value returned by [applyTheme] at creation time).
      */
-    fun recreateIfNeeded(activity: AppCompatActivity) {
-        if (themeChanged) {
-            themeChanged = false
+    fun recreateIfNeeded(activity: AppCompatActivity, currentThemeIndex: Int) {
+        val latest = Prefs.getInt(activity, Prefs.KEY_COLOR_THEME, 0)
+        if (latest != currentThemeIndex) {
             activity.recreate()
         }
     }

@@ -140,6 +140,8 @@
     <string name="no_models_available">No models available</string>
     <string name="select_model_hint">Select a model from the list above or type a name manually.</string>
 
+    <string name="anthropic_proxy_required">Anthropic\'s API is not OpenAI-compatible. Use an OpenAI-compatible proxy (e.g. LiteLLM) and enter its URL manually.</string>
+
     <!-- Cloud provider presets -->
     <string name="section_cloud_presets">Quick Cloud Provider Setup</string>
     <string name="cloud_preset_hint">Select a provider to auto-fill the endpoint</string>

@@ -28,6 +28,9 @@ class MainActivity : AppCompatActivity() {
     private val viewModel: ChatViewModel by viewModels()
     private val chatAdapter = ChatAdapter()
 
+    /** Theme index that was active when this Activity was (last) created. */
+    private var appliedThemeIndex: Int = 0
+
     companion object {
         private const val MAX_DIALOG_TITLE_LENGTH = 60
         private const val PERMISSIONS_REQUEST_CODE = 1001
@@ -35,12 +38,16 @@ class MainActivity : AppCompatActivity() {
         /**
          * Returns only the permissions that are relevant for the current API level.
          *
-         * - API 33+ (Tiramisu): DownloadManager manages public Downloads without runtime
-         *   permissions. READ_EXTERNAL_STORAGE is deprecated and no longer grants access
-         *   to arbitrary files in Downloads, so we request nothing.
-         * - API 29–32: READ_EXTERNAL_STORAGE lets the inference backends read model files
-         *   from the public Downloads directory.
-         * - API < 29: Also need WRITE_EXTERNAL_STORAGE to let DownloadManager write there.
+         * Models downloaded via the Model Browser are saved to app-private external storage
+         * (getExternalFilesDir), which the app can always read without runtime permissions.
+         * The permissions below are therefore only needed for models that were previously
+         * downloaded to the public Downloads folder (pre-0.1.0) and referenced by an absolute
+         * path stored in Prefs — reading such legacy paths still requires the storage permission
+         * on API 29–32.
+         *
+         * - API 33+ (Tiramisu): no storage permission needed.
+         * - API 29–32: READ_EXTERNAL_STORAGE for legacy model paths in public storage.
+         * - API < 29: Also need WRITE_EXTERNAL_STORAGE for DownloadManager fallback.
          *
          * READ_MEDIA_IMAGES / READ_MEDIA_VIDEO are intentionally excluded — they apply only
          * to photos and videos, not to model files (.litertlm / .task).
@@ -57,7 +64,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        ThemeHelper.applyTheme(this)
+        appliedThemeIndex = ThemeHelper.applyTheme(this)
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -81,7 +88,7 @@ class MainActivity : AppCompatActivity() {
         // Re-submit the current list so existing messages are rebound with the updated flag
         viewModel.messages.value?.let { chatAdapter.submitList(it.toList()) }
         // Recreate this activity if the user changed the color theme in Settings
-        ThemeHelper.recreateIfNeeded(this)
+        ThemeHelper.recreateIfNeeded(this, appliedThemeIndex)
     }
 
     private fun setupRecyclerView() {

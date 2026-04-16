@@ -17,6 +17,7 @@ class TerminalActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityTerminalBinding
     private val sshService = SSHService()
+    private var appliedThemeIndex: Int = 0
 
     private var connectedHost: String = ""
     private var connectedUser: String = ""
@@ -25,7 +26,7 @@ class TerminalActivity : AppCompatActivity() {
     private var connectedPort: Int = 22
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        ThemeHelper.applyTheme(this)
+        appliedThemeIndex = ThemeHelper.applyTheme(this)
         super.onCreate(savedInstanceState)
         binding = ActivityTerminalBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -125,6 +126,11 @@ class TerminalActivity : AppCompatActivity() {
         binding.scrollOutput.post {
             binding.scrollOutput.fullScroll(View.FOCUS_DOWN)
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        ThemeHelper.recreateIfNeeded(this, appliedThemeIndex)
     }
 
     override fun onSupportNavigateUp(): Boolean {

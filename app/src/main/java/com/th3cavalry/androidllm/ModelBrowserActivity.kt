@@ -53,6 +53,7 @@ class ModelBrowserActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityModelBrowserBinding
     private val viewModel: ModelBrowserViewModel by viewModels()
+    private var appliedThemeIndex: Int = 0
 
     private lateinit var catalogAdapter: ModelCatalogAdapter
     private var allModels: List<HfModelDto> = emptyList()
@@ -72,7 +73,7 @@ class ModelBrowserActivity : AppCompatActivity() {
     // ────────────────────────────────────────────────────────────
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        ThemeHelper.applyTheme(this)
+        appliedThemeIndex = ThemeHelper.applyTheme(this)
         super.onCreate(savedInstanceState)
         binding = ActivityModelBrowserBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -98,6 +99,11 @@ class ModelBrowserActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         unregisterReceiver(downloadReceiver)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        ThemeHelper.recreateIfNeeded(this, appliedThemeIndex)
     }
 
     override fun onSupportNavigateUp(): Boolean {

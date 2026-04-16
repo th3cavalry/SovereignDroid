@@ -7,9 +7,10 @@ import com.th3cavalry.androidllm.databinding.ActivityAboutBinding
 class AboutActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityAboutBinding
+    private var appliedThemeIndex: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        ThemeHelper.applyTheme(this)
+        appliedThemeIndex = ThemeHelper.applyTheme(this)
         super.onCreate(savedInstanceState)
         binding = ActivityAboutBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -17,6 +18,11 @@ class AboutActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         binding.tvVersion.text = BuildConfig.VERSION_NAME
+    }
+
+    override fun onResume() {
+        super.onResume()
+        ThemeHelper.recreateIfNeeded(this, appliedThemeIndex)
     }
 
     override fun onSupportNavigateUp(): Boolean {

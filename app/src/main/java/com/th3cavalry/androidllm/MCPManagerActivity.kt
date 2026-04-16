@@ -24,9 +24,10 @@ class MCPManagerActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMcpManagerBinding
     private val servers: MutableList<MCPServer> = mutableListOf()
     private lateinit var serverAdapter: MCPServerAdapter
+    private var appliedThemeIndex: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        ThemeHelper.applyTheme(this)
+        appliedThemeIndex = ThemeHelper.applyTheme(this)
         super.onCreate(savedInstanceState)
         binding = ActivityMcpManagerBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -128,6 +129,11 @@ class MCPManagerActivity : AppCompatActivity() {
     override fun onSupportNavigateUp(): Boolean {
         onBackPressedDispatcher.onBackPressed()
         return true
+    }
+
+    override fun onResume() {
+        super.onResume()
+        ThemeHelper.recreateIfNeeded(this, appliedThemeIndex)
     }
 
     // ─── Inner Adapter ────────────────────────────────────────────────────────
