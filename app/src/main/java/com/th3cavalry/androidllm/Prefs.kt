@@ -41,6 +41,11 @@ object Prefs {
     const val KEY_HIDE_TOOL_MESSAGES = "hide_tool_messages"
     /** When true, show model/tokens/time metadata below each assistant response. */
     const val KEY_SHOW_RESPONSE_INFO = "show_response_info"
+    /**
+     * Color theme index: 0 = Purple (default), 1 = Blue, 2 = Green, 3 = Orange.
+     * Applied via [com.th3cavalry.androidllm.ThemeHelper].
+     */
+    const val KEY_COLOR_THEME = "color_theme"
 
     // Inference backend selection
     // Replaces the old binary KEY_ON_DEVICE_ENABLED toggle.

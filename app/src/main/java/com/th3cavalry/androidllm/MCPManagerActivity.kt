@@ -26,6 +26,7 @@ class MCPManagerActivity : AppCompatActivity() {
     private lateinit var serverAdapter: MCPServerAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        ThemeHelper.applyTheme(this)
         super.onCreate(savedInstanceState)
         binding = ActivityMcpManagerBinding.inflate(layoutInflater)
         setContentView(binding.root)

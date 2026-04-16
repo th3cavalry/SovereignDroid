@@ -25,6 +25,7 @@ class TerminalActivity : AppCompatActivity() {
     private var connectedPort: Int = 22
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        ThemeHelper.applyTheme(this)
         super.onCreate(savedInstanceState)
         binding = ActivityTerminalBinding.inflate(layoutInflater)
         setContentView(binding.root)

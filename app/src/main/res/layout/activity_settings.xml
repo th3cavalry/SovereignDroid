@@ -48,6 +48,21 @@
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="8dp" />
 
+            <!-- Color theme selector -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/color_theme_label"
+                android:textAppearance="?attr/textAppearanceLabelMedium"
+                android:layout_marginBottom="4dp" />
+
+            <Spinner
+                android:id="@+id/spinnerColorTheme"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:entries="@array/color_themes"
+                android:layout_marginBottom="16dp" />
+
             <com.google.android.material.switchmaterial.SwitchMaterial
                 android:id="@+id/switchHideToolMessages"
                 android:layout_width="match_parent"
@@ -335,6 +350,21 @@
                 android:textColor="?attr/colorPrimary"
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="8dp" />
+
+            <!-- Cloud provider quick-select -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/section_cloud_presets"
+                android:textAppearance="?attr/textAppearanceLabelMedium"
+                android:layout_marginBottom="4dp" />
+
+            <Spinner
+                android:id="@+id/spinnerCloudProvider"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:entries="@array/cloud_providers"
+                android:layout_marginBottom="12dp" />
 
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"

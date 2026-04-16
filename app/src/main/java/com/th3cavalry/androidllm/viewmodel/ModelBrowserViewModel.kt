@@ -11,8 +11,10 @@ import com.th3cavalry.androidllm.Prefs
 import com.th3cavalry.androidllm.data.HfModelDto
 import com.th3cavalry.androidllm.data.HfSiblingDto
 import com.th3cavalry.androidllm.network.RetrofitClient
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -60,6 +62,13 @@ class ModelBrowserViewModel(application: Application) : AndroidViewModel(applica
 
     private val _activeDownload = MutableStateFlow<DownloadState?>(null)
     val activeDownload: StateFlow<DownloadState?> = _activeDownload
+
+    /**
+     * Download progress as a percentage (0–100), or -1 when no download is active.
+     * Updated by [startProgressPolling].
+     */
+    private val _downloadProgress = MutableStateFlow(-1)
+    val downloadProgress: StateFlow<Int> = _downloadProgress
 
     /** Set by the Activity before calling [loadModels]. */
     var backendId: String = Prefs.BACKEND_LITERT_LM
@@ -155,7 +164,44 @@ class ModelBrowserViewModel(application: Application) : AndroidViewModel(applica
             filename
         ).absolutePath
         _activeDownload.value = DownloadState(filename, downloadId, targetPath)
+        startProgressPolling(downloadId)
         return downloadId
+    }
+
+    /**
+     * Polls the [DownloadManager] every 500 ms while the given download is active and
+     * updates [downloadProgress] (0–100). Stops automatically when the download finishes
+     * or when the ViewModel is cleared.
+     */
+    private fun startProgressPolling(downloadId: Long) {
+        _downloadProgress.value = 0
+        viewModelScope.launch {
+            val dm = ctx.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            while (isActive && _activeDownload.value?.downloadId == downloadId) {
+                val query = DownloadManager.Query().setFilterById(downloadId)
+                val progress = dm.query(query).use { cursor ->
+                    if (!cursor.moveToFirst()) return@use -1
+                    val status = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
+                    if (status == DownloadManager.STATUS_RUNNING ||
+                        status == DownloadManager.STATUS_PAUSED) {
+                        val downloaded = cursor.getLong(
+                            cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
+                        )
+                        val total = cursor.getLong(
+                            cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
+                        )
+                        if (total > 0) ((downloaded * 100L) / total).toInt() else 0
+                    } else {
+                        -1 // done or error
+                    }
+                }
+                if (progress < 0) break
+                _downloadProgress.value = progress
+                delay(500L)
+            }
+            // Reset progress when polling ends (download finished/failed)
+            _downloadProgress.value = -1
+        }
     }
 
     /**
@@ -198,6 +244,7 @@ class ModelBrowserViewModel(application: Application) : AndroidViewModel(applica
 
     fun clearDownload() {
         _activeDownload.value = null
+        _downloadProgress.value = -1
     }
 
     // ────────────────────────────────────────────────────────────

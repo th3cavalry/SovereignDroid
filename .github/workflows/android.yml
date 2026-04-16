@@ -25,8 +25,21 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Verify semantic versioning
+        run: |
+          VERSION=$(grep 'versionName = ' app/build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')
+          echo "Checking versionName: $VERSION"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9._-]+)?(\+[a-zA-Z0-9._-]+)?$ ]]; then
+            echo "ERROR: versionName '$VERSION' does not follow semantic versioning"
+            exit 1
+          fi
+          echo "OK: versionName '$VERSION' is valid semver"
+
       - name: Build debug APK
         run: ./gradlew assembleDebug
+
+      - name: Run unit tests
+        run: ./gradlew test
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

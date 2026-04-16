@@ -18,4 +18,19 @@
     <color name="tool_success">#2E7D32</color>
     <color name="error_red">#B00020</color>
     <color name="input_bg">#F5F5F5</color>
+
+    <!-- Blue theme -->
+    <color name="blue_primary">#1565C0</color>
+    <color name="blue_primary_variant">#003c8f</color>
+    <color name="blue_secondary">#00ACC1</color>
+
+    <!-- Green theme -->
+    <color name="green_primary">#2E7D32</color>
+    <color name="green_primary_variant">#005005</color>
+    <color name="green_secondary">#66BB6A</color>
+
+    <!-- Orange theme -->
+    <color name="orange_primary">#E65100</color>
+    <color name="orange_primary_variant">#AC1900</color>
+    <color name="orange_secondary">#FFCA28</color>
 </resources>

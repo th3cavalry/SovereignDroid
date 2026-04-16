@@ -5,12 +5,15 @@
     <!-- Network permissions for LLM API, web search, GitHub, MCP servers -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />    
-    <!-- Storage permissions for downloading and accessing models -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
+    <!-- Storage permissions for downloading and accessing models.
+         READ_EXTERNAL_STORAGE is only needed on API 29–32; on API 33+ it is deprecated.
+         WRITE_EXTERNAL_STORAGE is only needed below API 29 (DownloadManager handles it above).
+         READ_MEDIA_* permissions are for media files only — model files (.litertlm/.task)
+         are not media, so those permissions are intentionally omitted. -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <!-- Override minSdk constraint from com.google.ai.edge.aicore (requires API 31).
          Gemini Nano will only work on Pixel 9+ / Android 15+ at runtime; devices below
          API 31 will receive a graceful error from GeminiNanoBackend.initialize(). -->

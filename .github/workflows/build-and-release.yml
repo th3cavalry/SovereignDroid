@@ -15,9 +15,46 @@ env:
   JAVA_VERSION: 17
 
 jobs:
-  build:
+  # ── Verify version follows semver ────────────────────────────────────────────
+  verify-version:
     runs-on: ubuntu-latest
-    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract versionName from build.gradle.kts
+        id: gradle_version
+        run: |
+          VERSION=$(grep 'versionName = ' app/build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Extracted versionName: $VERSION"
+
+      - name: Validate semantic versioning
+        run: |
+          VERSION="${{ steps.gradle_version.outputs.version }}"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9._-]+)?(\+[a-zA-Z0-9._-]+)?$ ]]; then
+            echo "ERROR: versionName '$VERSION' does not follow semantic versioning (MAJOR.MINOR.PATCH[-prerelease][+build])"
+            exit 1
+          fi
+          echo "versionName '$VERSION' is valid semver"
+
+      - name: Verify tag matches versionName (on tag push only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+          GRADLE_VERSION="${{ steps.gradle_version.outputs.version }}"
+          if [ "$TAG_VERSION" != "$GRADLE_VERSION" ]; then
+            echo "ERROR: Git tag 'v$TAG_VERSION' does not match versionName '$GRADLE_VERSION' in build.gradle.kts"
+            echo "Please update versionName in app/build.gradle.kts to match the tag, or re-tag."
+            exit 1
+          fi
+          echo "Tag v$TAG_VERSION matches versionName $GRADLE_VERSION ✓"
+
+  # ── Build debug APK ───────────────────────────────────────────────────────────
+  build:
+    needs: verify-version
+    runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -37,35 +74,25 @@ jobs:
 
       - name: Build Debug APK
         run: ./gradlew assembleDebug
-        
-      - name: Upload Debug APK
+
+      - name: Upload Debug APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.APP_NAME }}-debug
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 7
 
+  # ── Publish GitHub Release (tag pushes only) ──────────────────────────────────
   release:
     needs: build
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
-    
+    permissions:
+      contents: write
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: 'temurin'
-          cache: 'gradle'
-
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v3
-
-      - name: Make Gradle wrapper executable
-        run: chmod +x ./gradlew
 
       - name: Download Debug APK
         uses: actions/download-artifact@v4
@@ -79,20 +106,27 @@ jobs:
 
       - name: Rename APK with version
         run: |
-          mv apk/app-debug.apk apk/${{ env.APP_NAME }}-${{ steps.version.outputs.version }}.apk
+          mv apk/app-debug.apk "apk/${{ env.APP_NAME }}-v${{ steps.version.outputs.version }}.apk"
 
-      - name: Create Release
-        id: create_release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: Release ${{ steps.version.outputs.version }}
+          name: "Android LLM v${{ steps.version.outputs.version }}"
+          prerelease: ${{ contains(steps.version.outputs.version, 'alpha') || contains(steps.version.outputs.version, 'beta') || contains(steps.version.outputs.version, 'rc') }}
           body: |
-            Auto-generated release for version ${{ steps.version.outputs.version }}
-            
-            ## Changes
-            Please check the commits for this release.
-          draft: false
-          prerelease: false
+            ## Android LLM v${{ steps.version.outputs.version }}
+
+            ### Installation
+            Download the APK below and install it on your Android device (Android 8.0+ / API 26+).
+            > **Note:** You need to enable *Install from unknown sources* (or *Install unknown apps*) in Settings.
+
+            ### Obtainium
+            This release is compatible with [Obtainium](https://github.com/ImranR98/Obtainium).
+            Add the repository URL `https://github.com/${{ github.repository }}` in Obtainium to receive automatic updates.
+
+            ### Changes
+            See the [commit history](https://github.com/${{ github.repository }}/commits/${{ github.ref_name }}) for details.
           files: |
-            apk/${{ env.APP_NAME }}-${{ steps.version.outputs.version }}.apk
+            apk/${{ env.APP_NAME }}-v${{ steps.version.outputs.version }}.apk
+

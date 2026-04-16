@@ -69,6 +69,7 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        ThemeHelper.applyTheme(this)
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -80,6 +81,7 @@ class SettingsActivity : AppCompatActivity() {
         setupBackendSelector()
         setupBrowseButtons()
         setupFetchModels()
+        setupCloudProviderPresets()
     }
 
     private fun loadPrefs() {
@@ -146,6 +148,9 @@ class SettingsActivity : AppCompatActivity() {
             this, Prefs.KEY_SHOW_RESPONSE_INFO, false
         )
 
+        // Color theme
+        binding.spinnerColorTheme.setSelection(Prefs.getInt(this, Prefs.KEY_COLOR_THEME, 0))
+
         // System prompt
         binding.etSystemPrompt.setText(Prefs.getString(this, Prefs.KEY_SYSTEM_PROMPT))
 
@@ -204,6 +209,27 @@ class SettingsActivity : AppCompatActivity() {
                     .putExtra(ModelBrowserActivity.EXTRA_BACKEND_ID, Prefs.BACKEND_LITERT_LM)
             )
         }
+    }
+
+    /** Wires the cloud provider spinner to auto-fill the endpoint field. */
+    private fun setupCloudProviderPresets() {
+        binding.spinnerCloudProvider.onItemSelectedListener =
+            object : android.widget.AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: android.widget.AdapterView<*>, view: android.view.View?, pos: Int, id: Long
+                ) {
+                    val endpoint = when (pos) {
+                        1 -> "https://api.openai.com/v1"
+                        2 -> "https://api.groq.com/openai/v1"
+                        3 -> "https://openrouter.ai/api/v1"
+                        4 -> "https://api.together.xyz/v1"
+                        5 -> "https://api.anthropic.com/v1"
+                        else -> return
+                    }
+                    binding.etLlmEndpoint.setText(endpoint)
+                }
+                override fun onNothingSelected(parent: android.widget.AdapterView<*>) {}
+            }
     }
 
     /** Wires the "Fetch models" button to call GET /v1/models on the configured endpoint. */
@@ -397,6 +423,12 @@ class SettingsActivity : AppCompatActivity() {
         // Chat appearance
         Prefs.putBoolean(this, Prefs.KEY_HIDE_TOOL_MESSAGES, binding.switchHideToolMessages.isChecked)
         Prefs.putBoolean(this, Prefs.KEY_SHOW_RESPONSE_INFO, binding.switchShowResponseInfo.isChecked)
+
+        // Color theme — recreate all activities if the selection changed
+        val newTheme = binding.spinnerColorTheme.selectedItemPosition
+        val oldTheme = Prefs.getInt(this, Prefs.KEY_COLOR_THEME, 0)
+        Prefs.putInt(this, Prefs.KEY_COLOR_THEME, newTheme)
+        if (newTheme != oldTheme) recreate()
 
         // System prompt
         Prefs.putString(this, Prefs.KEY_SYSTEM_PROMPT, binding.etSystemPrompt.text.toString().trim())

@@ -48,6 +48,7 @@
     <string name="download_model_title">Download model?</string>
     <string name="download_model_message">Download %1$s (%2$s)?\n\nThe file will be saved to your Downloads folder.</string>
     <string name="download_started">Downloading %1$s…</string>
+    <string name="download_progress_label">Downloading %1$s… %2$d%%</string>
     <string name="download_complete_title">Download complete</string>
     <string name="download_complete_message">%1$s has been downloaded to your Downloads folder.</string>
     <string name="download_failed_title">Download failed</string>
@@ -139,6 +140,18 @@
     <string name="no_models_available">No models available</string>
     <string name="select_model_hint">Select a model from the list above or type a name manually.</string>
 
+    <!-- Cloud provider presets -->
+    <string name="section_cloud_presets">Quick Cloud Provider Setup</string>
+    <string name="cloud_preset_hint">Select a provider to auto-fill the endpoint</string>
+    <string-array name="cloud_providers">
+        <item>— Select a provider —</item>
+        <item>OpenAI (GPT-4o, GPT-4.1, o3, …)</item>
+        <item>Groq (fast Llama / Mistral inference)</item>
+        <item>OpenRouter (multi-provider gateway)</item>
+        <item>Together AI</item>
+        <item>Anthropic Claude (OpenAI-compat proxy)</item>
+    </string-array>
+
     <!-- Chat history -->
     <string name="chat_history_title">Previous Chats</string>
     <string name="no_saved_chats">No saved chats yet.</string>
@@ -153,6 +166,16 @@
         <item>DuckDuckGo (free, no key needed)</item>
         <item>Brave Search (API key required)</item>
         <item>SerpAPI (API key required)</item>
+    </string-array>
+
+    <!-- Color themes -->
+    <string name="section_appearance">Appearance</string>
+    <string name="color_theme_label">Color theme</string>
+    <string-array name="color_themes">
+        <item>Purple (default)</item>
+        <item>Blue</item>
+        <item>Green</item>
+        <item>Orange</item>
     </string-array>
 
     <!-- Permissions -->

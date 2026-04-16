@@ -2,6 +2,7 @@ package com.th3cavalry.androidllm
 
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -30,15 +31,33 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val MAX_DIALOG_TITLE_LENGTH = 60
         private const val PERMISSIONS_REQUEST_CODE = 1001
-        private val REQUIRED_PERMISSIONS = arrayOf(
-            android.Manifest.permission.READ_EXTERNAL_STORAGE,
-            android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            android.Manifest.permission.READ_MEDIA_IMAGES,
-            android.Manifest.permission.READ_MEDIA_VIDEO
-        )
+
+        /**
+         * Returns only the permissions that are relevant for the current API level.
+         *
+         * - API 33+ (Tiramisu): DownloadManager manages public Downloads without runtime
+         *   permissions. READ_EXTERNAL_STORAGE is deprecated and no longer grants access
+         *   to arbitrary files in Downloads, so we request nothing.
+         * - API 29–32: READ_EXTERNAL_STORAGE lets the inference backends read model files
+         *   from the public Downloads directory.
+         * - API < 29: Also need WRITE_EXTERNAL_STORAGE to let DownloadManager write there.
+         *
+         * READ_MEDIA_IMAGES / READ_MEDIA_VIDEO are intentionally excluded — they apply only
+         * to photos and videos, not to model files (.litertlm / .task).
+         */
+        private fun getRequiredPermissions(): Array<String> = when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> emptyArray()
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ->
+                arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE)
+            else -> arrayOf(
+                android.Manifest.permission.READ_EXTERNAL_STORAGE,
+                android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+            )
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        ThemeHelper.applyTheme(this)
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -120,31 +139,33 @@ class MainActivity : AppCompatActivity() {
     // ────────────────────────────────────────────────────────────
 
     private fun hasAllPermissions(): Boolean {
-        return REQUIRED_PERMISSIONS.all {
+        val required = getRequiredPermissions()
+        if (required.isEmpty()) return true
+        return required.all {
             ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
         }
     }
 
     private fun requestPermissions() {
-        if (shouldShowRationale()) {
+        val required = getRequiredPermissions()
+        if (required.isEmpty()) return
+        if (shouldShowRationale(required)) {
             // Show rationale dialog
             AlertDialog.Builder(this)
                 .setTitle(getString(R.string.permissions_required))
                 .setMessage(getString(R.string.permissions_explanation))
                 .setPositiveButton(android.R.string.ok) { _, _ ->
-                    requestPermissions(REQUIRED_PERMISSIONS, PERMISSIONS_REQUEST_CODE)
+                    requestPermissions(required, PERMISSIONS_REQUEST_CODE)
                 }
                 .setNegativeButton(android.R.string.cancel, null)
                 .show()
         } else {
-            requestPermissions(REQUIRED_PERMISSIONS, PERMISSIONS_REQUEST_CODE)
+            requestPermissions(required, PERMISSIONS_REQUEST_CODE)
         }
     }
 
-    private fun shouldShowRationale(): Boolean {
-        return REQUIRED_PERMISSIONS.any {
-            shouldShowRequestPermissionRationale(it)
-        }
+    private fun shouldShowRationale(permissions: Array<String>): Boolean {
+        return permissions.any { shouldShowRequestPermissionRationale(it) }
     }
 
     override fun onRequestPermissionsResult(
