@@ -6,19 +6,26 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  APP_NAME: Android-llm
+  JAVA_VERSION: '17'
+
 jobs:
+  # ── Build & Test ──────────────────────────────────────────────────────────────
   build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    outputs:
+      version: ${{ steps.semver.outputs.version }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
           cache: gradle
 
@@ -26,6 +33,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Verify semantic versioning
+        id: semver
         run: |
           VERSION=$(grep 'versionName = ' app/build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')
           echo "Checking versionName: $VERSION"
@@ -34,6 +42,7 @@ jobs:
             exit 1
           fi
           echo "OK: versionName '$VERSION' is valid semver"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Build debug APK
         run: ./gradlew assembleDebug
@@ -41,9 +50,72 @@ jobs:
       - name: Run unit tests
         run: ./gradlew test
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
+          name: ${{ env.APP_NAME }}-debug
           path: app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: warn
+          retention-days: 7
+          if-no-files-found: error
+
+  # ── Auto-publish release on every merge to main ───────────────────────────────
+  # Runs only on push to main (i.e. after a PR is merged), not on PRs themselves.
+  publish:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0       # needed to push tags
+
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-debug
+          path: apk
+
+      - name: Set version & tag
+        id: version
+        run: |
+          VERSION="${{ needs.build.outputs.version }}"
+          TAG="v${VERSION}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG"         >> "$GITHUB_OUTPUT"
+
+      - name: Rename APK
+        run: |
+          mv apk/app-debug.apk "apk/${{ env.APP_NAME }}-${{ steps.version.outputs.tag }}.apk"
+
+      - name: Create or update Git tag
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Force-update the tag to the current commit so each merge refreshes the release
+          git tag -f "$TAG"
+          git push origin "$TAG" --force
+
+      - name: Create or update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: "Android LLM ${{ steps.version.outputs.tag }}"
+          prerelease: ${{ contains(steps.version.outputs.version, 'alpha') || contains(steps.version.outputs.version, 'beta') || contains(steps.version.outputs.version, 'rc') }}
+          body: |
+            ## Android LLM ${{ steps.version.outputs.tag }}
+
+            ### Installation
+            Download the APK below and install it on your Android device (Android 8.0+ / API 26+).
+            > **Note:** You must enable **Install from unknown sources** (or **Install unknown apps**) in Settings.
+
+            ### Obtainium support
+            Add `https://github.com/${{ github.repository }}` in [Obtainium](https://github.com/ImranR98/Obtainium) for automatic updates.
+
+            ### What changed
+            See the [commit history](https://github.com/${{ github.repository }}/commits/${{ steps.version.outputs.tag }}) for details.
+          files: apk/${{ env.APP_NAME }}-${{ steps.version.outputs.tag }}.apk
