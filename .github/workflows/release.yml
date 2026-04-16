@@ -11,6 +11,9 @@ on:
         required: true
         default: 'v0.1.0'
 
+env:
+  APP_NAME: Android-llm
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -65,7 +68,7 @@ jobs:
         run: |
           TAG="${{ steps.tag.outputs.name }}"
           cp app/build/outputs/apk/debug/app-debug.apk \
-             "app/build/outputs/apk/debug/Android-llm-${TAG}.apk"
+             "app/build/outputs/apk/debug/${{ env.APP_NAME }}-${TAG}.apk"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -86,5 +89,5 @@ jobs:
             ### Changes
             See the [commit history](https://github.com/${{ github.repository }}/commits/${{ steps.tag.outputs.name }}) for details.
           files: |
-            app/build/outputs/apk/debug/Android-llm-${{ steps.tag.outputs.name }}.apk
+            app/build/outputs/apk/debug/${{ env.APP_NAME }}-${{ steps.tag.outputs.name }}.apk
 

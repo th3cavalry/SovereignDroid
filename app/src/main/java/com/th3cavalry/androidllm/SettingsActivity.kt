@@ -424,11 +424,14 @@ class SettingsActivity : AppCompatActivity() {
         Prefs.putBoolean(this, Prefs.KEY_HIDE_TOOL_MESSAGES, binding.switchHideToolMessages.isChecked)
         Prefs.putBoolean(this, Prefs.KEY_SHOW_RESPONSE_INFO, binding.switchShowResponseInfo.isChecked)
 
-        // Color theme — recreate all activities if the selection changed
+        // Color theme — signal all activities to recreate if the selection changed
         val newTheme = binding.spinnerColorTheme.selectedItemPosition
         val oldTheme = Prefs.getInt(this, Prefs.KEY_COLOR_THEME, 0)
         Prefs.putInt(this, Prefs.KEY_COLOR_THEME, newTheme)
-        if (newTheme != oldTheme) recreate()
+        if (newTheme != oldTheme) {
+            ThemeHelper.markThemeChanged()
+            recreate()
+        }
 
         // System prompt
         Prefs.putString(this, Prefs.KEY_SYSTEM_PROMPT, binding.etSystemPrompt.text.toString().trim())

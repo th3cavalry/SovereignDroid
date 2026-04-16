@@ -80,6 +80,8 @@ class MainActivity : AppCompatActivity() {
         chatAdapter.showResponseInfo = Prefs.getBoolean(this, Prefs.KEY_SHOW_RESPONSE_INFO, false)
         // Re-submit the current list so existing messages are rebound with the updated flag
         viewModel.messages.value?.let { chatAdapter.submitList(it.toList()) }
+        // Recreate this activity if the user changed the color theme in Settings
+        ThemeHelper.recreateIfNeeded(this)
     }
 
     private fun setupRecyclerView() {
