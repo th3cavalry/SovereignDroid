@@ -20,5 +20,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Android-llm"
+rootProject.name = "SovereignDroid"
 include(":app")

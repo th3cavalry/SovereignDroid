@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Android LLM</string>
+    <string name="app_name">SovereignDroid</string>
     <string name="settings">Settings</string>
     <string name="terminal">SSH Terminal</string>
     <string name="mcp_servers">MCP Servers</string>

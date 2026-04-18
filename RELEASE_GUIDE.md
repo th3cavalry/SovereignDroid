@@ -1,6 +1,6 @@
 # Release Guide
 
-This document explains how to create and publish a new beta release for Android-llm.
+This document explains how to create and publish a new beta release for SovereignDroid.
 
 ## Beta Release Process
 
@@ -155,7 +155,7 @@ If you need to create a release manually:
 ## Build Artifacts
 
 - **Debug APK**: `app/build/outputs/apk/debug/app-debug.apk`
-- **Versioned APK**: `app/build/outputs/apk/debug/Android-llm-vX.Y.Z-beta.N.apk`
+- **Versioned APK**: `app/build/outputs/apk/debug/SovereignDroid-vX.Y.Z-beta.N.apk`
 - **Release APK**: For production (requires signing configuration)
 
 ## Next Steps

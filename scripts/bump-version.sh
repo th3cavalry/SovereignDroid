@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Version bumping script for Android-llm
+# Version bumping script for SovereignDroid
 # Usage: ./scripts/bump-version.sh <patch|minor|major>
 
 set -e
@@ -64,7 +64,8 @@ update_version_name() {
 }
 
 # Main logic
-echo "=== Android-llm Version Bumper ==="
+echo ""
+echo "=== SovereignDroid Version Bumper ==="
 echo ""
 
 bump_version_code

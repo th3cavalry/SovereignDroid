@@ -1,4 +1,6 @@
-# Android LLM
+# SovereignDroid
+
+**Your AI, Your Rules** — An Android app that runs LLMs with complete privacy and control.
 
 An Android app that runs an LLM (Large Language Model) with agentic capabilities — it can search the web, execute SSH commands, interact with GitHub repositories, and connect to MCP (Model Context Protocol) servers.
 
