@@ -102,6 +102,15 @@ class ChatAdapter(
             val tv = itemView.findViewById<TextView>(R.id.tvContent)
             tv.text = message.content ?: ""
             tv.setOnLongClickListener { copyToClipboard(message.content) }
+
+            // Show attached image if present
+            val iv = itemView.findViewById<ImageView>(R.id.ivMessageImage)
+            if (message.imageUri != null) {
+                iv.visibility = View.VISIBLE
+                iv.setImageURI(android.net.Uri.parse(message.imageUri))
+            } else {
+                iv.visibility = View.GONE
+            }
         }
 
         private fun bindAssistant(message: ChatMessage) {

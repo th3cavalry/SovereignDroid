@@ -2,6 +2,7 @@ package com.th3cavalry.androidllm
 
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.Menu
@@ -11,17 +12,21 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
 import com.th3cavalry.androidllm.data.ChatSession
 import com.th3cavalry.androidllm.databinding.ActivityMainBinding
+import com.th3cavalry.androidllm.service.DocumentLoader
 import com.th3cavalry.androidllm.ui.ChatAdapter
 import com.th3cavalry.androidllm.viewmodel.ChatViewModel
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -38,6 +43,43 @@ class MainActivity : AppCompatActivity() {
 
     /** Theme index that was active when this Activity was (last) created. */
     private var appliedThemeIndex: Int = 0
+
+    /** Currently attached image URI for multimodal messages. */
+    private var pendingImageUri: Uri? = null
+
+    private val pickImageLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            pendingImageUri = uri
+            binding.ivAttachedImage.setImageURI(uri)
+            binding.imagePreviewContainer.visibility = View.VISIBLE
+        }
+    }
+
+    private val pickDocumentLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            try {
+                val doc = DocumentLoader(this).load(uri)
+                viewModel.setDocumentContext(doc.content)
+                Snackbar.make(
+                    binding.root,
+                    getString(R.string.document_loaded, doc.charCount),
+                    Snackbar.LENGTH_LONG
+                ).setAction(getString(R.string.clear)) {
+                    viewModel.setDocumentContext(null)
+                }.show()
+            } catch (e: Exception) {
+                Snackbar.make(
+                    binding.root,
+                    getString(R.string.document_load_failed, e.message),
+                    Snackbar.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
 
     companion object {
         private const val MAX_DIALOG_TITLE_LENGTH = 60
@@ -87,6 +129,14 @@ class MainActivity : AppCompatActivity() {
         setupInput()
         observeViewModel()
         chatAdapter.showResponseInfo = Prefs.getBoolean(this, Prefs.KEY_SHOW_RESPONSE_INFO, false)
+
+        // Migrate legacy SharedPreferences sessions to Room on first launch
+        viewModel.migrateFromPrefsIfNeeded()
+
+        // If launched from widget, focus the input field
+        if (intent?.getBooleanExtra(QuickPromptWidget.EXTRA_FOCUS_INPUT, false) == true) {
+            binding.etInput.requestFocus()
+        }
     }
 
     override fun onResume() {
@@ -119,13 +169,25 @@ class MainActivity : AppCompatActivity() {
                 true
             } else false
         }
+
+        // Image attachment
+        binding.btnAttach.setOnClickListener {
+            pickImageLauncher.launch("image/*")
+        }
+        binding.btnRemoveImage.setOnClickListener {
+            pendingImageUri = null
+            binding.imagePreviewContainer.visibility = View.GONE
+        }
     }
 
     private fun sendMessage() {
         val text = binding.etInput.text.toString().trim()
         if (text.isEmpty()) return
         binding.etInput.text?.clear()
-        viewModel.sendMessage(text)
+        val imageUri = pendingImageUri?.toString()
+        pendingImageUri = null
+        binding.imagePreviewContainer.visibility = View.GONE
+        viewModel.sendMessage(text, imageUri)
     }
 
     private fun observeViewModel() {
@@ -242,6 +304,10 @@ class MainActivity : AppCompatActivity() {
                 showModelPickerThenClear()
                 true
             }
+            R.id.action_load_document -> {
+                pickDocumentLauncher.launch(arrayOf("text/*", "application/json", "application/xml"))
+                true
+            }
             R.id.action_about -> {
                 startActivity(Intent(this, AboutActivity::class.java))
                 true
@@ -256,7 +322,7 @@ class MainActivity : AppCompatActivity() {
 
     /** Shows the saved chat history in a dialog; lets the user open, rename, or delete a session. */
     private fun showChatHistoryDialog() {
-        val allSessions = Prefs.getSavedSessions(this)
+        val allSessions = viewModel.savedSessions.value ?: emptyList()
         if (allSessions.isEmpty()) {
             Snackbar.make(binding.root, getString(R.string.no_saved_chats), Snackbar.LENGTH_SHORT).show()
             return
@@ -354,8 +420,7 @@ class MainActivity : AppCompatActivity() {
             .setItems(options) { _, which ->
                 when (which) {
                     0 -> {
-                        val session = Prefs.getSavedSessions(this).firstOrNull { it.id == sessionId }
-                        if (session != null) viewModel.loadSession(session)
+                        viewModel.loadSessionById(sessionId)
                     }
                     1 -> showRenameSessionDialog(sessionId, sessionTitle)
                     2 -> showExportFormatDialog(sessionId)
@@ -363,7 +428,7 @@ class MainActivity : AppCompatActivity() {
                         AlertDialog.Builder(this)
                             .setMessage(getString(R.string.delete_chat_confirm))
                             .setPositiveButton(getString(R.string.delete)) { _, _ ->
-                                Prefs.deleteSession(this, sessionId)
+                                viewModel.deleteSession(sessionId)
                             }
                             .setNegativeButton(getString(R.string.cancel), null)
                             .show()
@@ -383,11 +448,13 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.export_session))
             .setItems(formats) { _, which ->
-                val session = Prefs.getSavedSessions(this).firstOrNull { it.id == sessionId }
-                if (session != null) {
-                    when (which) {
-                        0 -> exportSessionAsJson(session)
-                        1 -> exportSessionAsText(session)
+                androidx.lifecycle.lifecycleScope.launch {
+                    val session = viewModel.getSessionForExport(sessionId)
+                    if (session != null) {
+                        when (which) {
+                            0 -> exportSessionAsJson(session)
+                            1 -> exportSessionAsText(session)
+                        }
                     }
                 }
             }
@@ -468,7 +535,7 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton(getString(R.string.rename)) { _, _ ->
                 val newTitle = input.text.toString().trim()
                 if (newTitle.isNotEmpty()) {
-                    Prefs.renameSession(this, sessionId, newTitle)
+                    viewModel.renameSession(sessionId, newTitle)
                 }
             }
             .setNegativeButton(getString(R.string.cancel), null)

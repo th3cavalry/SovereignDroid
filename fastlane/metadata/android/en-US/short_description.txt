@@ -1,0 +1,1 @@
+Private AI chat: on-device & cloud LLMs, tools, MCP, and multimodal — open source.

@@ -15,10 +15,19 @@ data class ChatRequest(
 
 data class MessageDto(
     val role: String,
-    val content: String?,
+    val content: Any?,
     @SerializedName("tool_calls") val toolCalls: List<ToolCallDto>? = null,
     @SerializedName("tool_call_id") val toolCallId: String? = null
 )
+
+/** Content part for multimodal (vision) messages. */
+data class ContentPartDto(
+    val type: String,
+    val text: String? = null,
+    @SerializedName("image_url") val imageUrl: ImageUrlDto? = null
+)
+
+data class ImageUrlDto(val url: String)
 
 data class ToolDto(
     val type: String = "function",

@@ -1,0 +1,9 @@
+Phase 3 — Room DB, multimodal, RAG, widget, parallel tools:
+- Persistent chat history with Room database
+- Parallel tool execution for multi-tool calls
+- MCP client connection caching
+- Image/multimodal input support
+- Document context (RAG) loading
+- Home screen quick-prompt widget
+- Espresso UI tests
+- Play Store / F-Droid metadata & privacy policy

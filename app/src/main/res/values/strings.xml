@@ -225,4 +225,21 @@
     <string name="help_diagnostics_title">Diagnostics</string>
     <string name="copy_diagnostics">Copy to clipboard</string>
     <string name="diagnostics_copied">Diagnostics copied</string>
+
+    <!-- Image attachment -->
+    <string name="attach_image">Attach image</string>
+    <string name="attached_image">Attached image</string>
+    <string name="pick_image_source">Add image</string>
+    <string name="from_camera">Take photo</string>
+    <string name="from_gallery">Choose from gallery</string>
+
+    <!-- RAG / Document context -->
+    <string name="attach_document">Attach document</string>
+    <string name="document_loaded">Document loaded (%1$d chars)</string>
+    <string name="document_load_failed">Failed to load document: %1$s</string>
+
+    <!-- Widget -->
+    <string name="widget_name">Quick Prompt</string>
+    <string name="widget_description">Send a quick prompt to SovereignDroid</string>
+    <string name="widget_hint">Ask anything…</string>
 </resources>

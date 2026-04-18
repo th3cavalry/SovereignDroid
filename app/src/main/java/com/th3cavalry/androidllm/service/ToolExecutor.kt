@@ -11,6 +11,9 @@ class ToolExecutor(private val context: Context) {
 
     private val sshService = SSHService()
 
+    /** Cache of initialized MCP clients keyed by server name. */
+    private val mcpClients = mutableMapOf<String, MCPClient>()
+
     private fun webSearchService(): WebSearchService {
         val provider = Prefs.getString(context, Prefs.KEY_SEARCH_PROVIDER, "duckduckgo")
         val apiKey = Prefs.getSecret(context, Prefs.KEY_SEARCH_API_KEY)
@@ -126,11 +129,13 @@ class ToolExecutor(private val context: Context) {
 
         for (attempt in 0..maxRetries) {
             try {
-                val client = MCPClient(server)
-                client.initialize()
+                val client = mcpClients.getOrPut(serverName) {
+                    MCPClient(server).also { it.initialize() }
+                }
                 return client.callTool(actualToolName, arguments)
             } catch (e: Exception) {
                 lastError = e
+                mcpClients.remove(serverName) // Invalidate cached client on error
                 // Only retry on transient errors (connection, timeout)
                 val msg = e.message ?: ""
                 val isTransient = msg.contains("timeout", ignoreCase = true) ||

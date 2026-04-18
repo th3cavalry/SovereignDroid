@@ -18,6 +18,7 @@ import com.th3cavalry.androidllm.data.ResponseInfo
 import com.th3cavalry.androidllm.data.TimeoutError
 import com.th3cavalry.androidllm.data.ToolCallData
 import com.th3cavalry.androidllm.data.toAppError
+import com.th3cavalry.androidllm.db.ChatRepository
 import com.th3cavalry.androidllm.network.dto.ToolDto
 import com.th3cavalry.androidllm.service.GeminiNanoBackend
 import com.th3cavalry.androidllm.service.InferenceBackend
@@ -68,6 +69,13 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
     private val llmService = LLMService(application)
 
+    /** Room-backed repository for chat session persistence. */
+    private val chatRepo = ChatRepository(application)
+
+    /** Optional document context injected via RAG file loading. */
+    private val _documentContext = MutableLiveData<String?>(null)
+    val documentContext: LiveData<String?> = _documentContext
+
     /** Lazily created; only one backend is alive at a time. */
     private var activeBackend: InferenceBackend? = null
 
@@ -109,18 +117,34 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /** Returns the user-configured system prompt, falling back to the built-in default. */
-    private fun systemPrompt(): String =
-        Prefs.getString(getApplication(), Prefs.KEY_SYSTEM_PROMPT)
+    private fun systemPrompt(): String {
+        val base = Prefs.getString(getApplication(), Prefs.KEY_SYSTEM_PROMPT)
             .ifBlank { LLMService.SYSTEM_PROMPT }
+        val doc = _documentContext.value
+        return if (doc != null) {
+            "$base\n\n--- Attached Document Context ---\n$doc"
+        } else {
+            base
+        }
+    }
+
+    /** Sets or clears document context loaded via the document picker. */
+    fun setDocumentContext(content: String?) {
+        _documentContext.value = content
+        // Update the system prompt in history to reflect the new context
+        if (history.isNotEmpty() && history[0].role == MessageRole.SYSTEM) {
+            history[0] = ChatMessage(role = MessageRole.SYSTEM, content = systemPrompt())
+        }
+    }
 
     /**
      * Sends the user's message and runs the appropriate agentic loop based on
      * the currently selected inference backend.
      */
-    fun sendMessage(userText: String) {
+    fun sendMessage(userText: String, imageUri: String? = null) {
         if (userText.isBlank() || _isLoading.value == true || currentJob?.isActive == true) return
 
-        val userMsg = ChatMessage(role = MessageRole.USER, content = userText)
+        val userMsg = ChatMessage(role = MessageRole.USER, content = userText, imageUri = imageUri)
         history.add(userMsg)
         trimHistoryIfNeeded()
         _messages.value = history.filterVisible()
@@ -218,7 +242,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             timestamp = activeSessionId,
             messages = sessionMessages
         )
-        Prefs.saveSession(getApplication(), session)
+        viewModelScope.launch {
+            chatRepo.saveSession(session)
+        }
     }
 
     /** Loads a previously saved session into the active chat. */
@@ -228,6 +254,43 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         history.addAll(session.messages)
         activeSessionId = session.id
         _messages.value = history.filterVisible()
+    }
+
+    /** Observable session list backed by Room. */
+    val savedSessions: LiveData<List<ChatSession>> = chatRepo.observeSessions()
+
+    /** Loads a session by ID from Room and opens it. */
+    fun loadSessionById(id: Long) {
+        viewModelScope.launch {
+            chatRepo.getSession(id)?.let { loadSession(it) }
+        }
+    }
+
+    /** Deletes a session by ID from Room. */
+    fun deleteSession(id: Long) {
+        viewModelScope.launch { chatRepo.deleteSession(id) }
+    }
+
+    /** Renames a session in Room. */
+    fun renameSession(id: Long, title: String) {
+        viewModelScope.launch { chatRepo.renameSession(id, title) }
+    }
+
+    /** Returns a session from Room for export. */
+    suspend fun getSessionForExport(id: Long): ChatSession? = chatRepo.getSession(id)
+
+    /** One-time migration: moves sessions from SharedPreferences into Room. */
+    fun migrateFromPrefsIfNeeded() {
+        viewModelScope.launch {
+            if (chatRepo.sessionCount() > 0) return@launch
+            val legacy = Prefs.getSavedSessions(getApplication())
+            if (legacy.isEmpty()) return@launch
+            for (session in legacy) {
+                chatRepo.saveSession(session)
+            }
+            // Clear SharedPreferences sessions after migration
+            android.util.Log.i("ChatViewModel", "Migrated ${legacy.size} sessions from SharedPreferences to Room")
+        }
     }
 
     // ─── Remote loop ───────────────────────────────────────────────────────────

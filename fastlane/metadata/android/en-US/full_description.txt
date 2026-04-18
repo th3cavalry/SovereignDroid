@@ -1,0 +1,29 @@
+SovereignDroid is a fully open-source Android AI chat app that puts you in control of your data.
+
+Run large language models entirely on your device — or connect to any OpenAI-compatible cloud API. Choose the setup that matches your privacy needs.
+
+KEY FEATURES
+
+• On-Device Inference — Run Gemma, Phi, Falcon, and more locally using MediaPipe, Google LiteRT, or Gemini Nano. No data leaves your phone.
+
+• Cloud LLM Support — Connect to OpenAI, Anthropic, Groq, Ollama, LM Studio, or any OpenAI-compatible endpoint.
+
+• Model Browser — Search and download models directly from Hugging Face with one tap.
+
+• Built-in Tools — Web search (DuckDuckGo, Brave, Tavily), SSH terminal, code execution, weather, news, and more — all accessible by the LLM.
+
+• MCP Protocol — Add custom tool servers using the Model Context Protocol for unlimited extensibility.
+
+• Multimodal Input — Attach images to your messages for vision-capable models.
+
+• Document Context (RAG) — Load text documents to give the LLM additional context for your conversation.
+
+• Chat History — Full session management with Room database persistence, export (JSON/Markdown), and search.
+
+• Home Screen Widget — Quick-access widget to start chatting instantly.
+
+• Privacy First — No analytics, no telemetry, no ads, no accounts. Your API keys are stored in encrypted SharedPreferences.
+
+• Customizable — Dark/light/system themes, adjustable temperature, system prompts, and model parameters.
+
+SovereignDroid is free software released under the MIT License. Contributions welcome!

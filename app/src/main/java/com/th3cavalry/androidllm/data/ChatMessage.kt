@@ -23,7 +23,9 @@ data class ChatMessage(
     /** Tool execution progress information */
     val executingInfo: ExecutingInfo? = null,
     /** Whether this message is currently being streamed (for typing indicator) */
-    val isStreaming: Boolean = false
+    val isStreaming: Boolean = false,
+    /** URI of an attached image (content:// or file://) for vision/multimodal models */
+    val imageUri: String? = null
 )
 
 /** Metadata for tools currently being executed */

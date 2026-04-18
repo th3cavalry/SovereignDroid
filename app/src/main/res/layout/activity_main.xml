@@ -40,9 +40,40 @@
             android:padding="8dp"
             android:clipToPadding="false"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toTopOf="@id/inputLayout"
+            app:layout_constraintBottom_toTopOf="@id/imagePreviewContainer"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Image attachment preview (shown when an image is selected) -->
+        <FrameLayout
+            android:id="@+id/imagePreviewContainer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:padding="8dp"
+            android:background="?attr/colorSurface"
+            app:layout_constraintBottom_toTopOf="@id/inputLayout"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <ImageView
+                android:id="@+id/ivAttachedImage"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:scaleType="centerCrop"
+                android:contentDescription="@string/attached_image" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRemoveImage"
+                style="@style/Widget.Material3.Button.Icon"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_gravity="top|end"
+                app:icon="@drawable/ic_delete"
+                app:iconSize="16dp"
+                app:cornerRadius="14dp" />
+
+        </FrameLayout>
 
         <LinearLayout
             android:id="@+id/inputLayout"
@@ -55,6 +86,16 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAttach"
+                style="@style/Widget.Material3.Button.Icon"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center_vertical"
+                android:contentDescription="@string/attach_image"
+                app:icon="@drawable/ic_add"
+                app:iconSize="20dp" />
 
             <EditText
                 android:id="@+id/etInput"

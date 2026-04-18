@@ -10,6 +10,9 @@ import com.th3cavalry.androidllm.data.MessageRole
 import com.th3cavalry.androidllm.data.ToolCallData
 import com.th3cavalry.androidllm.network.RetrofitClient
 import com.th3cavalry.androidllm.network.dto.*
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 
 /**
  * Orchestrates the LLM interaction including the multi-step tool-calling loop.
@@ -95,11 +98,13 @@ class LLMService(private val context: Context) {
                 )
                 onProgress?.invoke(history.toList())
 
-                // Execute each tool call
+                // Execute tool calls in parallel when multiple are present
                 val executor = ToolExecutor(context)
-                for (toolCall in message.toolCalls) {
-                    // Show executing state
-                    val executingMessage = ChatMessage(
+                val toolCalls = message.toolCalls
+
+                // Show executing state for all tools
+                val executingMessages = toolCalls.map { toolCall ->
+                    ChatMessage(
                         role = MessageRole.ASSISTANT,
                         content = null,
                         executingInfo = com.th3cavalry.androidllm.data.ExecutingInfo(
@@ -107,25 +112,34 @@ class LLMService(private val context: Context) {
                             status = getToolExecutingStatus(toolCall.function.name)
                         )
                     )
-                    history.add(executingMessage)
-                    onProgress?.invoke(history.toList())
+                }
+                history.addAll(executingMessages)
+                onProgress?.invoke(history.toList())
 
-                    val result = try {
-                        val args = gson.fromJson(toolCall.function.arguments, Map::class.java)
-                            ?.mapKeys { it.key.toString() }
-                            ?.mapValues { it.value }
-                            ?: emptyMap()
-                        executor.execute(toolCall.function.name, args)
-                    } catch (e: Exception) {
-                        "Error executing tool ${toolCall.function.name}: ${e.message}"
-                    }
+                // Run all tools concurrently
+                val results = coroutineScope {
+                    toolCalls.map { toolCall ->
+                        async {
+                            try {
+                                val args = gson.fromJson(toolCall.function.arguments, Map::class.java)
+                                    ?.mapKeys { it.key.toString() }
+                                    ?.mapValues { it.value }
+                                    ?: emptyMap()
+                                executor.execute(toolCall.function.name, args)
+                            } catch (e: Exception) {
+                                "Error executing tool ${toolCall.function.name}: ${e.message}"
+                            }
+                        }
+                    }.awaitAll()
+                }
 
-                    // Remove executing message and add result
-                    history.remove(executingMessage)
+                // Remove all executing messages and add results
+                executingMessages.forEach { history.remove(it) }
+                toolCalls.forEachIndexed { i, toolCall ->
                     history.add(
                         ChatMessage(
                             role = MessageRole.TOOL,
-                            content = result,
+                            content = results[i],
                             toolCallId = toolCall.id,
                             toolName = toolCall.function.name
                         )
@@ -156,7 +170,23 @@ class LLMService(private val context: Context) {
     private fun List<ChatMessage>.toMessageDtoList(): List<MessageDto> = map { msg ->
         MessageDto(
             role = msg.role.value,
-            content = msg.content,
+            content = if (msg.imageUri != null && msg.role == MessageRole.USER) {
+                // Multimodal: build content parts array for vision API
+                buildList {
+                    if (!msg.content.isNullOrBlank()) {
+                        add(ContentPartDto(type = "text", text = msg.content))
+                    }
+                    val base64 = encodeImageToBase64(msg.imageUri)
+                    if (base64 != null) {
+                        add(ContentPartDto(
+                            type = "image_url",
+                            imageUrl = ImageUrlDto("data:image/jpeg;base64,$base64")
+                        ))
+                    }
+                }
+            } else {
+                msg.content
+            },
             toolCalls = msg.toolCalls?.map { tc ->
                 ToolCallDto(
                     id = tc.id,
@@ -166,6 +196,14 @@ class LLMService(private val context: Context) {
             },
             toolCallId = msg.toolCallId
         )
+    }
+
+    private fun encodeImageToBase64(uriString: String): String? = try {
+        val uri = android.net.Uri.parse(uriString)
+        val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+        bytes?.let { android.util.Base64.encodeToString(it, android.util.Base64.NO_WRAP) }
+    } catch (e: Exception) {
+        null
     }
 
     companion object {
