@@ -345,10 +345,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: "Android LLM v${{ needs.check-version.outputs.version }} (${{ steps.release_notes.outputs.release_type }})"
+          name: "SovereignDroid v${{ needs.check-version.outputs.version }} (${{ steps.release_notes.outputs.release_type }})"
           prerelease: ${{ steps.release_notes.outputs.is_prerelease }}
           body: |
-            ## 🚀 Android LLM v${{ needs.check-version.outputs.version }}
+            ## 🚀 SovereignDroid v${{ needs.check-version.outputs.version }}
             
             **Release Type:** ${{ steps.release_notes.outputs.release_type }}
             **Version Code:** ${{ needs.check-version.outputs.version_code }}
