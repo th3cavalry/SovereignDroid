@@ -36,12 +36,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = "21"
         // litertlm-android is compiled with Kotlin 2.2.x metadata; we suppress the version
         // check since the bytecode is still binary-compatible with our Kotlin 2.0.x compiler.
         freeCompilerArgs = freeCompilerArgs + listOf("-Xskip-metadata-version-check")
